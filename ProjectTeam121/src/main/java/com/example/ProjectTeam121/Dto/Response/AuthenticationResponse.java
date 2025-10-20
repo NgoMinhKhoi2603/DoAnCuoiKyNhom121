@@ -1,4 +1,4 @@
-package com.example.ProjectTeam121.Dto;
+package com.example.ProjectTeam121.Dto.Response;
 
 import lombok.Builder;
 import lombok.Data;

@@ -1,4 +1,4 @@
-package com.example.ProjectTeam121.Dto;
+package com.example.ProjectTeam121.Dto.Request;
 
 import lombok.Data;
 @Data

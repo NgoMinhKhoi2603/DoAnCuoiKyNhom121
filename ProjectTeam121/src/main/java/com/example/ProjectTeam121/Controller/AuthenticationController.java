@@ -1,8 +1,8 @@
 package com.example.ProjectTeam121.Controller;
 
-import com.example.ProjectTeam121.Dto.AuthenticationRequest;
-import com.example.ProjectTeam121.Dto.AuthenticationResponse;
-import com.example.ProjectTeam121.Dto.RegisterRequest;
+import com.example.ProjectTeam121.Dto.Request.AuthenticationRequest;
+import com.example.ProjectTeam121.Dto.Response.AuthenticationResponse;
+import com.example.ProjectTeam121.Dto.Request.RegisterRequest;
 import com.example.ProjectTeam121.Service.AuthenticationService;
 import com.example.ProjectTeam121.Service.LogoutService;
 import jakarta.servlet.http.HttpServletRequest;
