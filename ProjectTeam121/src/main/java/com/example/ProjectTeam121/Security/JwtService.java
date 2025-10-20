@@ -1,4 +1,4 @@
-package com.example.DemoProjectTinasoft.Security;
+package com.example.ProjectTeam121.Security;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;

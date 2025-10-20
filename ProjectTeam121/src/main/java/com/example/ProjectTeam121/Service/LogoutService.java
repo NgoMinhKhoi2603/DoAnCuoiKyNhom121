@@ -1,6 +1,6 @@
-package com.example.DemoProjectTinasoft.Service;
+package com.example.ProjectTeam121.Service;
 
-import com.example.DemoProjectTinasoft.Security.JwtService;
+import com.example.ProjectTeam121.Security.JwtService;
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;

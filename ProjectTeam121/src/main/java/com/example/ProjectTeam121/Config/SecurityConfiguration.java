@@ -1,6 +1,6 @@
-package com.example.DemoProjectTinasoft.Config;
+package com.example.ProjectTeam121.Config;
 
-import com.example.DemoProjectTinasoft.Security.JwtAuthenticationFilter;
+import com.example.ProjectTeam121.Security.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

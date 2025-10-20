@@ -1,7 +1,6 @@
-package com.example.DemoProjectTinasoft.Config;
+package com.example.ProjectTeam121.Config;
 
-import com.example.DemoProjectTinasoft.Repository.UserRepository;
-import lombok.RequiredArgsConstructor;
+import com.example.ProjectTeam121.Repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.context.annotation.Bean;

@@ -1,6 +1,6 @@
-package com.example.DemoProjectTinasoft.Repository;
+package com.example.ProjectTeam121.Repository;
 
-import com.example.DemoProjectTinasoft.Entity.User;
+import com.example.ProjectTeam121.Entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.time.LocalDateTime;

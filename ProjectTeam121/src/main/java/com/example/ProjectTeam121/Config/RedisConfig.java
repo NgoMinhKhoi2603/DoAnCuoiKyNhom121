@@ -1,4 +1,4 @@
-package com.example.DemoProjectTinasoft.Config;
+package com.example.ProjectTeam121.Config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

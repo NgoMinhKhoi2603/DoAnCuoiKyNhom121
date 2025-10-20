@@ -1,4 +1,4 @@
-package com.example.DemoProjectTinasoft.Entity;
+package com.example.ProjectTeam121.Entity;
 
 import jakarta.persistence.*;
 import lombok.Getter;

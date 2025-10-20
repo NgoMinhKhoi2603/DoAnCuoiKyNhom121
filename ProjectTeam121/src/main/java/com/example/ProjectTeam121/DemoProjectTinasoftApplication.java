@@ -1,4 +1,4 @@
-package com.example.DemoProjectTinasoft;
+package com.example.ProjectTeam121;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

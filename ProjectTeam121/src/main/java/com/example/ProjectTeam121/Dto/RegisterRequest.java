@@ -1,4 +1,4 @@
-package com.example.DemoProjectTinasoft.Dto;
+package com.example.ProjectTeam121.Dto;
 
 import lombok.Data;
 @Data

@@ -1,7 +1,7 @@
-package com.example.DemoProjectTinasoft.Scheduler;
+package com.example.ProjectTeam121.Scheduler;
 
-import com.example.DemoProjectTinasoft.Entity.User;
-import com.example.DemoProjectTinasoft.Repository.UserRepository;
+import com.example.ProjectTeam121.Entity.User;
+import com.example.ProjectTeam121.Repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

@@ -1,13 +1,13 @@
-package com.example.DemoProjectTinasoft.Service;
+package com.example.ProjectTeam121.Service;
 
-import com.example.DemoProjectTinasoft.Dto.AuthenticationRequest;
-import com.example.DemoProjectTinasoft.Dto.AuthenticationResponse;
-import com.example.DemoProjectTinasoft.Dto.RegisterRequest;
-import com.example.DemoProjectTinasoft.Entity.Role;
-import com.example.DemoProjectTinasoft.Entity.User;
-import com.example.DemoProjectTinasoft.Repository.RoleRepository;
-import com.example.DemoProjectTinasoft.Repository.UserRepository;
-import com.example.DemoProjectTinasoft.Security.JwtService;
+import com.example.ProjectTeam121.Dto.AuthenticationRequest;
+import com.example.ProjectTeam121.Dto.AuthenticationResponse;
+import com.example.ProjectTeam121.Dto.RegisterRequest;
+import com.example.ProjectTeam121.Entity.Role;
+import com.example.ProjectTeam121.Entity.User;
+import com.example.ProjectTeam121.Repository.RoleRepository;
+import com.example.ProjectTeam121.Repository.UserRepository;
+import com.example.ProjectTeam121.Security.JwtService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.authentication.AuthenticationManager;

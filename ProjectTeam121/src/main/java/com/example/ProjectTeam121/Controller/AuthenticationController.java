@@ -1,10 +1,10 @@
-package com.example.DemoProjectTinasoft.Controller;
+package com.example.ProjectTeam121.Controller;
 
-import com.example.DemoProjectTinasoft.Dto.AuthenticationRequest;
-import com.example.DemoProjectTinasoft.Dto.AuthenticationResponse;
-import com.example.DemoProjectTinasoft.Dto.RegisterRequest;
-import com.example.DemoProjectTinasoft.Service.AuthenticationService;
-import com.example.DemoProjectTinasoft.Service.LogoutService;
+import com.example.ProjectTeam121.Dto.AuthenticationRequest;
+import com.example.ProjectTeam121.Dto.AuthenticationResponse;
+import com.example.ProjectTeam121.Dto.RegisterRequest;
+import com.example.ProjectTeam121.Service.AuthenticationService;
+import com.example.ProjectTeam121.Service.LogoutService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
