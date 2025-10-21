@@ -1,8 +1,8 @@
 package com.example.ProjectTeam121.Service;
 
-import com.example.ProjectTeam121.Dto.AuthenticationRequest;
-import com.example.ProjectTeam121.Dto.AuthenticationResponse;
-import com.example.ProjectTeam121.Dto.RegisterRequest;
+import com.example.ProjectTeam121.Dto.Request.AuthenticationRequest;
+import com.example.ProjectTeam121.Dto.Response.AuthenticationResponse;
+import com.example.ProjectTeam121.Dto.Request.RegisterRequest;
 import com.example.ProjectTeam121.Entity.Role;
 import com.example.ProjectTeam121.Entity.User;
 import com.example.ProjectTeam121.Repository.RoleRepository;
