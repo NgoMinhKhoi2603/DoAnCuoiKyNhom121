@@ -12,10 +12,10 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @EnableScheduling
 @EntityScan
 @Slf4j
-public class DemoProjectTinasoftApplication {
+public class ProjectTeam121Application {
 
 	public static void main(String[] args) {
-		SpringApplication.run(DemoProjectTinasoftApplication.class, args);
+		SpringApplication.run(ProjectTeam121Application.class, args);
 	}
 
 }
