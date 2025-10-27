@@ -2,7 +2,7 @@ package com.example.ProjectTeam121.Entity.Iot;
 
 import com.example.ProjectTeam121.Dto.Enum.DeviceStatus;
 import com.example.ProjectTeam121.Entity.BaseEntity;
-import com.example.ProjectTeam121.Entity.User;
+// import com.example.ProjectTeam121.Entity.User; // <- Đã loại bỏ
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -21,7 +21,7 @@ import java.util.Set;
 @NoArgsConstructor
 @Entity
 @Table(name = "DEVICES", indexes = {
-        @Index(name = "idx_device_user", columnList = "user_id"),
+        // @Index(name = "idx_device_user", columnList = "user_id"), // <- Đã loại bỏ
         @Index(name = "idx_device_location", columnList = "location_id"),
         @Index(name = "idx_device_type", columnList = "type_id")
 })
@@ -48,11 +48,6 @@ public class Device extends BaseEntity {
     private LocalDateTime installedAt;
 
     private LocalDateTime lastSeen;
-
-    // Quan hệ: Thiết bị này thuộc về User nào
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
 
     // Quan hệ: Thiết bị này ở Vị trí nào
     @ManyToOne(fetch = FetchType.LAZY)

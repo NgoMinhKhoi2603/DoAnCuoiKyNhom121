@@ -37,11 +37,6 @@ public class Location extends BaseEntity {
     @Column(precision = 9, scale = 6)
     private BigDecimal longitude;
 
-    // Quan hệ: Vị trí này thuộc về User nào
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
-
     // Quan hệ: Cấu trúc cây (Vị trí cha)
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "parent_location_id")

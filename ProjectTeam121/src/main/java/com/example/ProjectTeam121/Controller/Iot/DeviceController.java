@@ -3,7 +3,6 @@ package com.example.ProjectTeam121.Controller.Iot;
 import com.example.ProjectTeam121.Dto.Iot.Request.DeviceRequest;
 import com.example.ProjectTeam121.Dto.Iot.Response.DeviceResponse;
 import com.example.ProjectTeam121.Service.Iot.DeviceService;
-import com.example.ProjectTeam121.utils.SecurityUtils;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -18,33 +17,29 @@ public class DeviceController {
 
     private final DeviceService deviceService;
 
-    private String getUsername() {
-        return SecurityUtils.getCurrentUsername();
-    }
-
     @PostMapping
     public ResponseEntity<DeviceResponse> create(@Valid @RequestBody DeviceRequest request) {
-        return ResponseEntity.ok(deviceService.create(request, getUsername()));
+        return ResponseEntity.ok(deviceService.create(request));
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<DeviceResponse> update(@PathVariable String id, @Valid @RequestBody DeviceRequest request) {
-        return ResponseEntity.ok(deviceService.update(id, request, getUsername()));
+        return ResponseEntity.ok(deviceService.update(id, request));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable String id) {
-        deviceService.delete(id, getUsername());
+        deviceService.delete(id);
         return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<DeviceResponse> getById(@PathVariable String id) {
-        return ResponseEntity.ok(deviceService.getById(id, getUsername()));
+        return ResponseEntity.ok(deviceService.getById(id));
     }
 
-    @GetMapping("/my-devices")
-    public ResponseEntity<Page<DeviceResponse>> getMyDevices(Pageable pageable) {
-        return ResponseEntity.ok(deviceService.getDevicesByUser(getUsername(), pageable));
+    @GetMapping("/all") // Đổi tên từ /my-devices
+    public ResponseEntity<Page<DeviceResponse>> getAllDevices(Pageable pageable) {
+        return ResponseEntity.ok(deviceService.getAllDevices(pageable));
     }
 }

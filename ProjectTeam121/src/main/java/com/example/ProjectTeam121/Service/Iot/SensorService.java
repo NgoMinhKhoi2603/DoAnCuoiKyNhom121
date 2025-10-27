@@ -31,22 +31,22 @@ public class SensorService {
     private final SensorMapper sensorMapper;
     private final HistoryService historyService;
 
-    // Helper: Tìm device và kiểm tra quyền sở hữu
-    private Device findDeviceByIdAndCheckOwnership(String deviceId, String username) {
-        return deviceRepository.findByIdAndUser_Username(deviceId, username)
-                .orElseThrow(() -> new ValidationException(ErrorCode.DEVICE_NOT_FOUND, "Device not found or access denied"));
+    // Helper: Tìm device (không cần check ownership)
+    private Device findDeviceById(String deviceId) {
+        return deviceRepository.findById(deviceId)
+                .orElseThrow(() -> new ValidationException(ErrorCode.DEVICE_NOT_FOUND, "Device not found"));
     }
 
-    // Helper: Tìm sensor và kiểm tra quyền sở hữu (thông qua device)
-    private Sensor findSensorByIdAndCheckOwnership(String id, String username) {
-        return sensorRepository.findByIdAndDeviceUserUsername(id, username)
-                .orElseThrow(() -> new ValidationException(ErrorCode.SENSOR_NOT_FOUND, "Sensor not found or access denied"));
+    // Helper: Tìm sensor (không cần check ownership)
+    private Sensor findSensorById(String id) {
+        return sensorRepository.findById(id)
+                .orElseThrow(() -> new ValidationException(ErrorCode.SENSOR_NOT_FOUND, "Sensor not found"));
     }
 
     @Transactional
-    public SensorResponse create(String deviceId, SensorRequest request, String username) {
-        // Kiểm tra quyền sở hữu device
-        Device device = findDeviceByIdAndCheckOwnership(deviceId, username);
+    public SensorResponse create(String deviceId, SensorRequest request) {
+        // Tìm device
+        Device device = findDeviceById(deviceId);
 
         // Tìm Property (global)
         Property property = propertyRepository.findById(request.getPropertyId())
@@ -59,15 +59,15 @@ public class SensorService {
         Sensor savedSensor = sensorRepository.save(sensor);
 
         historyService.saveHistory(savedSensor, ActionLog.CREATE, HistoryType.SENSOR_MANAGEMENT,
-                savedSensor.getId(), username);
+                savedSensor.getId(), SecurityUtils.getCurrentUsername());
 
         return sensorMapper.toResponse(savedSensor);
     }
 
     @Transactional
-    public SensorResponse update(String id, SensorRequest request, String username) {
-        // Kiểm tra quyền sở hữu sensor
-        Sensor sensor = findSensorByIdAndCheckOwnership(id, username);
+    public SensorResponse update(String id, SensorRequest request) {
+        // Tìm sensor
+        Sensor sensor = findSensorById(id);
 
         // Cập nhật
         sensorMapper.updateEntityFromRequest(request, sensor);
@@ -82,31 +82,31 @@ public class SensorService {
         Sensor updatedSensor = sensorRepository.save(sensor);
 
         historyService.saveHistory(updatedSensor, ActionLog.UPDATE, HistoryType.SENSOR_MANAGEMENT,
-                updatedSensor.getId(), username);
+                updatedSensor.getId(), SecurityUtils.getCurrentUsername());
 
         return sensorMapper.toResponse(updatedSensor);
     }
 
     @Transactional
-    public void delete(String id, String username) {
-        Sensor sensor = findSensorByIdAndCheckOwnership(id, username);
+    public void delete(String id) {
+        Sensor sensor = findSensorById(id);
         sensorRepository.delete(sensor);
 
         historyService.saveHistory(sensor, ActionLog.DELETE, HistoryType.SENSOR_MANAGEMENT,
-                sensor.getId(), username);
+                sensor.getId(), SecurityUtils.getCurrentUsername());
     }
 
     @Transactional(readOnly = true)
-    public SensorResponse getById(String id, String username) {
-        Sensor sensor = findSensorByIdAndCheckOwnership(id, username);
+    public SensorResponse getById(String id) {
+        Sensor sensor = findSensorById(id);
         return sensorMapper.toResponse(sensor);
     }
 
     @Transactional(readOnly = true)
-    public Page<SensorResponse> getSensorsByDevice(String deviceId, String username, Pageable pageable) {
-        // Kiểm tra quyền sở hữu device
-        findDeviceByIdAndCheckOwnership(deviceId, username);
-        return sensorRepository.findByDevice_IdAndDeviceUserUsername(deviceId, username, pageable)
+    public Page<SensorResponse> getSensorsByDevice(String deviceId, Pageable pageable) {
+        // Kiểm tra device tồn tại
+        findDeviceById(deviceId);
+        return sensorRepository.findByDevice_Id(deviceId, pageable)
                 .map(sensorMapper::toResponse);
     }
 }
