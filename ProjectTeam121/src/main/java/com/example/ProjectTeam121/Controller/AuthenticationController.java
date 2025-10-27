@@ -6,6 +6,7 @@ import com.example.ProjectTeam121.Dto.Request.RegisterRequest;
 import com.example.ProjectTeam121.Service.AuthenticationService;
 import com.example.ProjectTeam121.Service.LogoutService;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid; // Thêm import
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -22,12 +23,12 @@ public class AuthenticationController {
     private final LogoutService logoutService;
 
     @PostMapping("/register")
-    public ResponseEntity<AuthenticationResponse> register(@RequestBody RegisterRequest request) {
+    public ResponseEntity<AuthenticationResponse> register(@Valid @RequestBody RegisterRequest request) { // Thêm @Valid
         return ResponseEntity.ok(service.register(request));
     }
 
     @PostMapping("/authenticate")
-    public ResponseEntity<AuthenticationResponse> authenticate(@RequestBody AuthenticationRequest request) {
+    public ResponseEntity<AuthenticationResponse> authenticate(@Valid @RequestBody AuthenticationRequest request) { // Thêm @Valid
         return ResponseEntity.ok(service.authenticate(request));
     }
 

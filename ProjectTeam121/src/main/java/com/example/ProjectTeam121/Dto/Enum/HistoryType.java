@@ -2,5 +2,10 @@ package com.example.ProjectTeam121.Dto.Enum;
 
 
 public enum HistoryType {
-
+    USER_MANAGEMENT,
+    LOCATION_MANAGEMENT,
+    DEVICE_TYPE_MANAGEMENT,
+    DEVICE_MANAGEMENT,
+    PROPERTY_MANAGEMENT,
+    SENSOR_MANAGEMENT
 }

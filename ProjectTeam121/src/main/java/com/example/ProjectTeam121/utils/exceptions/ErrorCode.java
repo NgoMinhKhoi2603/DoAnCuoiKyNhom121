@@ -30,7 +30,24 @@ public enum ErrorCode {
     CONTROL_MEASURE_NOT_FOUND(1024, "error.control_measure_not_found", HttpStatus.BAD_REQUEST),
     INVALID_STATE(1025, "error.invalid_state", HttpStatus.BAD_REQUEST),
     CONTROL_MATRIX_NOT_FOUND(1026, "error.control_matrix_not_found", HttpStatus.BAD_REQUEST),
-    DUPLICATE_VALUE(1027, "error.duplicate_value", HttpStatus.BAD_REQUEST);
+    DUPLICATE_VALUE(1027, "error.duplicate_value", HttpStatus.BAD_REQUEST),
+    ROLE_NOT_FOUND(1028, "error.role_not_found", HttpStatus.NOT_FOUND),
+    // Lỗi chung cho IoT
+    OWNERSHIP_VIOLATION(1029, "error.ownership_violation", HttpStatus.FORBIDDEN),
+    // Lỗi cho Location
+    LOCATION_NOT_FOUND(1030, "error.location_not_found", HttpStatus.NOT_FOUND),
+    // Lỗi cho DeviceType
+    DEVICE_TYPE_NOT_FOUND(1031, "error.device_type_not_found", HttpStatus.NOT_FOUND),
+    DEVICE_TYPE_NAME_EXISTS(1032, "error.device_type_name_exists", HttpStatus.BAD_REQUEST),
+    // Lỗi cho Property
+    PROPERTY_NOT_FOUND(1033, "error.property_not_found", HttpStatus.NOT_FOUND),
+    PROPERTY_NAME_EXISTS(1034, "error.property_name_exists", HttpStatus.BAD_REQUEST),
+    // Lỗi cho Device
+    DEVICE_NOT_FOUND(1035, "error.device_not_found", HttpStatus.NOT_FOUND),
+    DEVICE_IDENTIFIER_EXISTS(1036, "error.device_identifier_exists", HttpStatus.BAD_REQUEST),
+    // Lỗi cho Sensor
+    SENSOR_NOT_FOUND(1037, "error.sensor_not_found", HttpStatus.NOT_FOUND);
+
 
     private final int code;
     private final String messageKey;

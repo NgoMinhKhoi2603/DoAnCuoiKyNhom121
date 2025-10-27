@@ -1,6 +1,11 @@
 package com.example.ProjectTeam121.Entity;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.security.core.GrantedAuthority;
@@ -15,7 +20,10 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 @Entity
-@Table(name = "users")
+@Table(name = "users", indexes = {
+        @Index(name = "idx_user_username", columnList = "username"),
+        @Index(name = "idx_user_email", columnList = "email")
+})
 @Getter
 @Setter
 public class User implements UserDetails, Serializable {
@@ -26,20 +34,32 @@ public class User implements UserDetails, Serializable {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true)
+    @NotBlank
+    @Size(min = 3, max = 50)
+    @Column(nullable = false, unique = true, length = 50)
     private String username;
 
-    @Column(nullable = false)
+    @NotBlank
+    @Size(min = 6, max = 100)
+    @Column(nullable = false, length = 100)
     private String password;
 
-    @Column(nullable = false, unique = true)
+    @NotBlank
+    @Email
+    @Size(max = 100)
+    @Column(nullable = false, unique = true, length = 100)
     private String email;
 
+    @NotNull
     private boolean enabled = false;
+
+    @NotNull
+    private boolean locked = false;
 
     @Column(nullable = false, updatable = false, columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
     private LocalDateTime createdAt;
 
+    @NotEmpty // Đảm bảo user phải có ít nhất 1 role
     @ManyToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
     @JoinTable(
             name = "user_roles",
@@ -49,12 +69,12 @@ public class User implements UserDetails, Serializable {
     private Set<Role> roles = new HashSet<>();
 
 
-    @PrePersist // Annotation này giúp tự động gán giá trị trước khi lưu
+    @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
     }
 
-    // Các phương thức của UserDetails
+    // ... (Các phương thức UserDetails giữ nguyên) ...
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return roles.stream()
@@ -69,7 +89,7 @@ public class User implements UserDetails, Serializable {
 
     @Override
     public boolean isAccountNonLocked() {
-        return true;
+        return !this.locked;
     }
 
     @Override

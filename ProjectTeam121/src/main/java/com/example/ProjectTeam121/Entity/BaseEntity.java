@@ -7,6 +7,9 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateTimeDeserializer;
 import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
@@ -25,30 +28,29 @@ import java.util.UUID;
 @NoArgsConstructor
 public abstract class BaseEntity implements Serializable {
 
-    /** Khóa chính UUID */
     @Id
+    @NotBlank
+    @Size(max = 36)
     @Column(name = "ID", nullable = false, updatable = false, length = 36)
     private String id = UUID.randomUUID().toString();
 
-    /** Trạng thái hoạt động (1 = active, 0 = inactive) */
+    @NotNull
     @Column(name = "FLAG_STATUS", nullable = false)
     private Integer flagStatus = 1;
 
-    /** Đánh dấu xóa mềm (0 = chưa xóa, 1 = đã xóa) */
+    @NotNull
     @Column(name = "IS_DELETED", nullable = false)
     private Integer isDeleted = 0;
 
-    /** Phiên bản để lock cập nhật đồng thời */
     @Version
     @Column(name = "VERSION")
     private Integer version;
 
-    /** Người tạo bản ghi */
     @CreatedBy
+    @Size(max = 100)
     @Column(name = "CREATED_BY", length = 100, updatable = false)
     private String createdBy;
 
-    /** Ngày tạo bản ghi */
     @CreatedDate
     @Column(name = "CREATE_DATE", updatable = false)
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
@@ -56,12 +58,11 @@ public abstract class BaseEntity implements Serializable {
     @JsonDeserialize(using = LocalDateTimeDeserializer.class)
     private LocalDateTime createDate;
 
-    /** Người cập nhật gần nhất */
     @LastModifiedBy
+    @Size(max = 100)
     @Column(name = "LAST_UPDATED_BY", length = 100, insertable = false)
     private String lastUpdatedBy;
 
-    /** Ngày cập nhật gần nhất */
     @LastModifiedDate
     @Column(name = "LAST_UPDATE_DATE", insertable = false)
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
@@ -69,7 +70,7 @@ public abstract class BaseEntity implements Serializable {
     @JsonDeserialize(using = LocalDateTimeDeserializer.class)
     private LocalDateTime lastUpdateDate;
 
-    /** Dùng để bỏ qua auditing khi cần */
+    // ... (Phần còn lại giữ nguyên) ...
     private static final ThreadLocal<Boolean> skipAuditing = ThreadLocal.withInitial(() -> false);
 
     public static void setSkipAuditing(boolean skip) {

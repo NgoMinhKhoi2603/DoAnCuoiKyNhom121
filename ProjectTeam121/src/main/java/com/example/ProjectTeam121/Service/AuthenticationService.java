@@ -1,5 +1,7 @@
 package com.example.ProjectTeam121.Service;
 
+import com.example.ProjectTeam121.Dto.Enum.ActionLog;
+import com.example.ProjectTeam121.Dto.Enum.HistoryType;
 import com.example.ProjectTeam121.Dto.Request.AuthenticationRequest;
 import com.example.ProjectTeam121.Dto.Response.AuthenticationResponse;
 import com.example.ProjectTeam121.Dto.Request.RegisterRequest;
@@ -14,6 +16,7 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -26,9 +29,11 @@ public class AuthenticationService {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
+    private final HistoryService historyService; // Thêm HistoryService
 
     private final RedisTemplate<String, Object> redisTemplate;
 
+    @Transactional
     public AuthenticationResponse register(RegisterRequest request) {
         if (userRepository.existsByUsername(request.getUsername())) {
             throw new RuntimeException("Error: Username is already taken!");
@@ -50,9 +55,15 @@ public class AuthenticationService {
         user.setRoles(roles);
 
         user.setEnabled(true);
+        user.setLocked(false); // Thêm trạng thái locked
 
-        userRepository.save(user);
-        var jwtToken = jwtService.generateToken(user);
+        User savedUser = userRepository.save(user);
+
+        // Ghi log lịch sử
+        historyService.saveHistory(savedUser, ActionLog.CREATE, HistoryType.USER_MANAGEMENT,
+                savedUser.getUsername(), savedUser.getUsername()); // Tự đăng ký
+
+        var jwtToken = jwtService.generateToken(savedUser);
         return AuthenticationResponse.builder().token(jwtToken).build();
     }
 
