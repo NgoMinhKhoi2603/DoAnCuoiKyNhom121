@@ -7,6 +7,9 @@ import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 import org.hibernate.annotations.Comment;
+import org.hibernate.annotations.JdbcTypeCode;
+
+import java.sql.Types;
 
 @Getter
 @Setter
@@ -17,15 +20,21 @@ import org.hibernate.annotations.Comment;
         @Index(name = "idx_history_type", columnList = "historyType")
 })
 public class HistoryEntity extends BaseEntity {
+
     @Enumerated(EnumType.STRING)
+    @Column(name = "action", length = 32, nullable = false)
     private ActionLog action;
 
     @Enumerated(EnumType.STRING)
+    @Column(name = "history_type", length = 64, nullable = false)
     private HistoryType historyType;
 
-    @Column(columnDefinition = "CLOB")
+    @Lob
+    @JdbcTypeCode(Types.LONGVARCHAR)
+    @Column(name = "content", columnDefinition = "LONGTEXT")
     private String content;
 
     @Comment("Định danh của đối tượng liên quan đến lịch sử")
+    @Column(name = "identify", length = 255)
     private String identify;
 }
