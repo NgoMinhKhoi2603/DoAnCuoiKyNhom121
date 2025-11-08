@@ -9,6 +9,9 @@ import jakarta.validation.constraints.Size;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 import org.hibernate.annotations.Comment;
+import org.hibernate.annotations.JdbcTypeCode;
+
+import java.sql.Types;
 
 @Getter
 @Setter
@@ -23,10 +26,12 @@ public class HistoryEntity extends BaseEntity {
 
     @NotNull
     @Enumerated(EnumType.STRING)
+    @Column(name = "action", length = 32, nullable = false)
     private ActionLog action;
 
     @NotNull
     @Enumerated(EnumType.STRING)
+    @Column(name = "history_type", length = 64, nullable = false)
     private HistoryType historyType;
 
     @NotNull
