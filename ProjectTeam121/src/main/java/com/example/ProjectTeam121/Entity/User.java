@@ -56,6 +56,10 @@ public class User implements UserDetails, Serializable {
     @NotNull
     private boolean locked = false;
 
+    @NotNull
+    @Column(nullable = false)
+    private boolean commentingLocked = false;
+
     @Column(nullable = false, updatable = false, columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
     private LocalDateTime createdAt;
 

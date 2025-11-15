@@ -22,6 +22,6 @@ public interface SensorMapper {
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "device", ignore = true)
     @Mapping(target = "property", ignore = true)
-    @Mapping(target = "lastValue", ignore = true) // lastValue chỉ nên được cập nhật bởi hệ thống
+    @Mapping(target = "latestValue", ignore = true)
     void updateEntityFromRequest(SensorRequest request, @MappingTarget Sensor entity);
 }

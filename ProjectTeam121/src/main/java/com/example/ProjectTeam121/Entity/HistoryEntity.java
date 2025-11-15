@@ -35,7 +35,7 @@ public class HistoryEntity extends BaseEntity {
     private HistoryType historyType;
 
     @NotNull
-    @Column(columnDefinition = "CLOB") // CLOB/TEXT thường không thể là "blank", nhưng không nên null
+    @Column(columnDefinition = "TEXT")
     private String content;
 
     @Comment("Định danh của đối tượng liên quan đến lịch sử")

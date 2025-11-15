@@ -46,7 +46,11 @@ public enum ErrorCode {
     DEVICE_NOT_FOUND(1035, "error.device_not_found", HttpStatus.NOT_FOUND),
     DEVICE_IDENTIFIER_EXISTS(1036, "error.device_identifier_exists", HttpStatus.BAD_REQUEST),
     // Lỗi cho Sensor
-    SENSOR_NOT_FOUND(1037, "error.sensor_not_found", HttpStatus.NOT_FOUND);
+    SENSOR_NOT_FOUND(1037, "error.sensor_not_found", HttpStatus.NOT_FOUND),
+
+    COMMENTING_BLOCKED(1038, "error.commenting_blocked", HttpStatus.FORBIDDEN),
+
+    COMMENT_NOT_FOUND(1039, "error.comment_not_found", HttpStatus.NOT_FOUND);
 
 
     private final int code;

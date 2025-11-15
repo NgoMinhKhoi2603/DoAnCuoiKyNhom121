@@ -10,16 +10,16 @@ import org.mapstruct.MappingTarget;
 @Mapper(componentModel = "spring")
 public interface LocationMapper {
 
-    @Mapping(target = "user", ignore = true)
+//    @Mapping(target = "user", ignore = true)
     @Mapping(target = "parent", ignore = true)
     Location toEntity(LocationRequest request);
 
     @Mapping(source = "parent.id", target = "parentId")
-    @Mapping(source = "user.username", target = "username")
+//    @Mapping(source = "user.username", target = "username")
     LocationResponse toResponse(Location entity);
 
     @Mapping(target = "id", ignore = true)
-    @Mapping(target = "user", ignore = true)
+//    @Mapping(target = "user", ignore = true)
     @Mapping(target = "parent", ignore = true)
     @Mapping(target = "devices", ignore = true)
     void updateEntityFromRequest(LocationRequest request, @MappingTarget Location entity);

@@ -43,7 +43,7 @@ public class Sensor extends BaseEntity {
     private BigDecimal thresholdCritical;
 
     @Size(max = 255)
-    private String lastValue;
+    private String latestValue;
 
     // Quan hệ: Cảm biến này thuộc Thiết bị nào
     @ManyToOne(fetch = FetchType.LAZY)

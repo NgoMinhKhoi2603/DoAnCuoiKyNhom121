@@ -16,7 +16,7 @@ public class SensorResponse extends BaseIotResponse {
     private boolean isActuator;
     private BigDecimal thresholdWarning;
     private BigDecimal thresholdCritical;
-    private String lastValue;
+    private String latestValue;
     private String deviceId;
     private String propertyId;
     private String propertyName;

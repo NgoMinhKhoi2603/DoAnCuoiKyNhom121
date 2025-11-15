@@ -115,4 +115,34 @@ public class UserService {
 
         return userMapper.toUserResponse(savedUser);
     }
+
+    /**
+     * Chặn khả năng bình luận của user
+     */
+    @Transactional
+    public UserResponse lockCommenting(String username) {
+        User user = findUserByUsername(username);
+        user.setCommentingLocked(true);
+        User savedUser = userRepository.save(user);
+
+        historyService.saveHistory(savedUser, ActionLog.UPDATE, HistoryType.USER_MANAGEMENT,
+                savedUser.getUsername(), SecurityUtils.getCurrentUsername());
+
+        return userMapper.toUserResponse(savedUser);
+    }
+
+    /**
+     * Mở khóa khả năng bình luận của user
+     */
+    @Transactional
+    public UserResponse unlockCommenting(String username) {
+        User user = findUserByUsername(username);
+        user.setCommentingLocked(false);
+        User savedUser = userRepository.save(user);
+
+        historyService.saveHistory(savedUser, ActionLog.UPDATE, HistoryType.USER_MANAGEMENT,
+                savedUser.getUsername(), SecurityUtils.getCurrentUsername());
+
+        return userMapper.toUserResponse(savedUser);
+    }
 }

@@ -9,6 +9,5 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface DeviceRepository extends JpaRepository<Device, String> {
     boolean existsByUniqueIdentifier(String uniqueIdentifier);
-
-    Page<Device> findByLocation_IdAndUser_Username(String locationId, String username, Pageable pageable);
+//    Page<Device> findByLocation_IdAndUser_Username(String locationId, String username, Pageable pageable);
 }

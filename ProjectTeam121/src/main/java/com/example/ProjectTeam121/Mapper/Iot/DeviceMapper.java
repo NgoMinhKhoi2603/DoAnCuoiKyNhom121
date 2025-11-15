@@ -10,12 +10,12 @@ import org.mapstruct.MappingTarget;
 @Mapper(componentModel = "spring")
 public interface DeviceMapper {
 
-    @Mapping(target = "user", ignore = true)
+//    @Mapping(target = "user", ignore = true)
     @Mapping(target = "location", ignore = true)
     @Mapping(target = "deviceType", ignore = true)
     Device toEntity(DeviceRequest request);
 
-    @Mapping(source = "user.username", target = "username")
+//    @Mapping(source = "user.username", target = "username")
     @Mapping(source = "location.id", target = "locationId")
     @Mapping(source = "location.name", target = "locationName")
     @Mapping(source = "deviceType.id", target = "typeId")
@@ -23,7 +23,7 @@ public interface DeviceMapper {
     DeviceResponse toResponse(Device entity);
 
     @Mapping(target = "id", ignore = true)
-    @Mapping(target = "user", ignore = true)
+//    @Mapping(target = "user", ignore = true)
     @Mapping(target = "location", ignore = true)
     @Mapping(target = "deviceType", ignore = true)
     @Mapping(target = "sensors", ignore = true)

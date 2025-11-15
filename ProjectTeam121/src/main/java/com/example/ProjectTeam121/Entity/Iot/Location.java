@@ -18,9 +18,7 @@ import java.util.Set;
 @SuperBuilder
 @NoArgsConstructor
 @Entity
-@Table(name = "LOCATIONS", indexes = {
-        @Index(name = "idx_location_user", columnList = "user_id")
-})
+@Table(name = "LOCATIONS")
 public class Location extends BaseEntity {
 
     @NotBlank
