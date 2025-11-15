@@ -4,9 +4,7 @@ import com.example.ProjectTeam121.Dto.Request.AuthenticationRequest;
 import com.example.ProjectTeam121.Dto.Response.AuthenticationResponse;
 import com.example.ProjectTeam121.Dto.Request.RegisterRequest;
 import com.example.ProjectTeam121.Service.AuthenticationService;
-import com.example.ProjectTeam121.Service.LogoutService;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.validation.Valid; // Thêm import
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -20,7 +18,6 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthenticationController {
 
     private final AuthenticationService service;
-    private final LogoutService logoutService;
 
     @PostMapping("/register")
     public ResponseEntity<AuthenticationResponse> register(@Valid @RequestBody RegisterRequest request) { // Thêm @Valid
@@ -30,11 +27,5 @@ public class AuthenticationController {
     @PostMapping("/authenticate")
     public ResponseEntity<AuthenticationResponse> authenticate(@Valid @RequestBody AuthenticationRequest request) { // Thêm @Valid
         return ResponseEntity.ok(service.authenticate(request));
-    }
-
-    @PostMapping("/logout")
-    public ResponseEntity<String> logout(HttpServletRequest request) {
-        logoutService.logout(request);
-        return ResponseEntity.ok("Logged out successfully.");
     }
 }

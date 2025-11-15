@@ -1,6 +1,5 @@
 package com.example.ProjectTeam121.Security;
 
-import com.example.ProjectTeam121.Service.LogoutService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -23,7 +22,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
     private final UserDetailsService userDetailsService;
-    private final LogoutService logoutService;
 
     @Override
     protected void doFilterInternal(
@@ -41,13 +39,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         jwt = authHeader.substring(7);
-
-        // Kiem tra blacklist
-        if (logoutService.isTokenBlacklisted(jwt)) {
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            response.getWriter().write("Token has been blacklisted");
-            return;
-        }
 
         username = jwtService.extractUsername(jwt);
 

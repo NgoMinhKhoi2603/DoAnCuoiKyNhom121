@@ -71,6 +71,7 @@ public class AsyncConfig implements AsyncConfigurer {
      * Decorator cho virtual thread executor để đảm bảo MDC được truyền đúng
      */
     @Bean(name = "mdcAwareVirtualThreadExecutor")
+    @org.springframework.context.annotation.Primary
     public Executor mdcAwareVirtualThreadExecutor() {
         return task -> {
             // Sao chép MDC từ calling thread

@@ -79,6 +79,10 @@ public abstract class BaseEntity implements Serializable {
 
     @PrePersist
     protected void onCreate() {
+        if (this.id == null || this.id.trim().isEmpty()) {
+            this.id = UUID.randomUUID().toString();
+        }
+
         if (flagStatus == null) flagStatus = 1;
         if (isDeleted == null) isDeleted = 0;
 

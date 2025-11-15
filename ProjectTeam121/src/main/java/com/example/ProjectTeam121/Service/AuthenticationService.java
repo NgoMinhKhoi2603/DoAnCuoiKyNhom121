@@ -11,7 +11,7 @@ import com.example.ProjectTeam121.Repository.RoleRepository;
 import com.example.ProjectTeam121.Repository.UserRepository;
 import com.example.ProjectTeam121.Security.JwtService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.redis.core.RedisTemplate;
+//import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -31,7 +31,7 @@ public class AuthenticationService {
     private final AuthenticationManager authenticationManager;
     private final HistoryService historyService; // Thêm HistoryService
 
-    private final RedisTemplate<String, Object> redisTemplate;
+//    private final RedisTemplate<String, Object> redisTemplate;
 
     @Transactional
     public AuthenticationResponse register(RegisterRequest request) {
