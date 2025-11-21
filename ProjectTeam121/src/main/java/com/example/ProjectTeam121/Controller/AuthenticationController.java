@@ -37,7 +37,7 @@ public class AuthenticationController {
     }
 
     @GetMapping("/current")
-    public ResponseEntity<?> getCurrentUser(@RequestHeader("Authorization") String authHeader) {
+    public ResponseEntity<CurrentUserResponse> getCurrentUser(@RequestHeader("Authorization") String authHeader) {
 
         String token = authHeader.replace("Bearer ", "");
         String username = SecurityUtils.getCurrentUsername();
