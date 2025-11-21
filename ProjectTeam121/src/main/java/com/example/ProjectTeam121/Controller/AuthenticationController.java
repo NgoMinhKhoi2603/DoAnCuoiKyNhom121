@@ -4,6 +4,7 @@ import com.example.ProjectTeam121.Dto.Request.AuthenticationRequest;
 import com.example.ProjectTeam121.Dto.Response.AuthenticationResponse;
 import com.example.ProjectTeam121.Dto.Request.RegisterRequest;
 import com.example.ProjectTeam121.Dto.Response.CurrentUserResponse;
+import com.example.ProjectTeam121.Entity.Role;
 import com.example.ProjectTeam121.Entity.User;
 import com.example.ProjectTeam121.Repository.UserRepository;
 import com.example.ProjectTeam121.Service.AuthenticationService;
@@ -12,6 +13,9 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/v1/auth")
@@ -34,15 +38,28 @@ public class AuthenticationController {
 
     @GetMapping("/current")
     public ResponseEntity<?> getCurrentUser(@RequestHeader("Authorization") String authHeader) {
+
         String token = authHeader.replace("Bearer ", "");
         String username = SecurityUtils.getCurrentUsername();
-        User user = userRepository.findByUsername(username)
-                .orElse(null);
 
-        String email = (user != null) ? user.getEmail() : "";
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found"));
 
         return ResponseEntity.ok(
-                new CurrentUserResponse(username, email, token)
+                CurrentUserResponse.builder()
+                        .username(user.getUsername())
+                        .email(user.getEmail())
+                        .unit(user.getUnit() != null ? user.getUnit().name() : null)
+                        .unitDescription(user.getUnit() != null ? user.getUnit().getDescription() : null)
+                        .roles(
+                                user.getRoles()
+                                        .stream()
+                                        .map(Role::getName)
+                                        .toList()
+                        )
+                        .token(token)
+                        .createdAt(user.getCreatedAt())
+                        .build()
         );
     }
 }
