@@ -25,10 +25,10 @@ public class ApplicationConfig {
     }
 
     @Bean
-    @Cacheable(value = "users", key = "#username")
     public UserDetailsService userDetailsService() {
-        return username -> userRepository.findByUsername(username)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
+        return input -> userRepository.findByEmail(input)
+                .or(() -> userRepository.findByUsername(input))
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
     }
 
     @Bean

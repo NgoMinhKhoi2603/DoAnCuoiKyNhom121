@@ -6,7 +6,7 @@ import lombok.Data;
 public class AuthenticationRequest {
 
     @NotBlank(message = "Username cannot be blank")
-    private String username;
+    private String email;
 
     @NotBlank(message = "Password cannot be blank")
     private String password;
