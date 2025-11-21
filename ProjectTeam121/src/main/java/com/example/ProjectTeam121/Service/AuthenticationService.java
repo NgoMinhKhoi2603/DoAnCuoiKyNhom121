@@ -2,6 +2,7 @@ package com.example.ProjectTeam121.Service;
 
 import com.example.ProjectTeam121.Dto.Enum.ActionLog;
 import com.example.ProjectTeam121.Dto.Enum.HistoryType;
+import com.example.ProjectTeam121.Dto.Enum.UnitEnum;
 import com.example.ProjectTeam121.Dto.Request.AuthenticationRequest;
 import com.example.ProjectTeam121.Dto.Response.AuthenticationResponse;
 import com.example.ProjectTeam121.Dto.Request.RegisterRequest;
@@ -18,6 +19,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -48,6 +50,8 @@ public class AuthenticationService {
         user.setEmail(request.getEmail());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
 
+        user.setUnit(resolveUnitEnum(request.getUnit()));
+        // Thêm ROLE_USER mặc định
         Set<Role> roles = new HashSet<>();
         Role userRole = roleRepository.findByName("ROLE_USER")
                 .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
@@ -55,16 +59,32 @@ public class AuthenticationService {
         user.setRoles(roles);
 
         user.setEnabled(true);
-        user.setLocked(false); // Thêm trạng thái locked
+        user.setLocked(false);
 
         User savedUser = userRepository.save(user);
 
-        // Ghi log lịch sử
-        historyService.saveHistory(savedUser, ActionLog.CREATE, HistoryType.USER_MANAGEMENT,
-                savedUser.getUsername(), savedUser.getUsername()); // Tự đăng ký
-
+        // Ghi log
+        historyService.saveHistory(
+                savedUser,
+                ActionLog.CREATE,
+                HistoryType.USER_MANAGEMENT,
+                savedUser.getUsername(),
+                savedUser.getUsername()
+        );
         var jwtToken = jwtService.generateToken(savedUser);
         return AuthenticationResponse.builder().token(jwtToken).build();
+    }
+
+    private UnitEnum resolveUnitEnum(String input) {
+        try {
+            return UnitEnum.valueOf(input.toUpperCase());
+        } catch (Exception ignored) {}
+
+        // Trường hợp FE gửi mô tả đầy đủ
+        return Arrays.stream(UnitEnum.values())
+                .filter(u -> u.getDescription().equalsIgnoreCase(input))
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("Invalid unit: " + input));
     }
 
     public AuthenticationResponse authenticate(AuthenticationRequest request) {

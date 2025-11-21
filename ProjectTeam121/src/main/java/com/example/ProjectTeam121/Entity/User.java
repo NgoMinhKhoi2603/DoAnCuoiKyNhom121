@@ -1,11 +1,8 @@
 package com.example.ProjectTeam121.Entity;
 
+import com.example.ProjectTeam121.Dto.Enum.UnitEnum;
 import jakarta.persistence.*;
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotEmpty;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.*;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.security.core.GrantedAuthority;
@@ -49,6 +46,9 @@ public class User implements UserDetails, Serializable {
     @Size(max = 100)
     @Column(nullable = false, unique = true, length = 100)
     private String email;
+
+    @Enumerated(EnumType.STRING)
+    private UnitEnum unit;
 
     @NotNull
     private boolean enabled = false;
