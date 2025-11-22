@@ -62,4 +62,9 @@ public class AuthenticationController {
                         .build()
         );
     }
+
+    @GetMapping("/activate")
+    public ResponseEntity<String> confirm(@RequestParam("token") String token) {
+        return ResponseEntity.ok(service.activateAccount(token));
+    }
 }
