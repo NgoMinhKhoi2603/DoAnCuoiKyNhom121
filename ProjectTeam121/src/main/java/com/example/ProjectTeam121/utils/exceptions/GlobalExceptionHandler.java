@@ -10,6 +10,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authorization.AuthorizationDeniedException;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
 
@@ -92,6 +93,22 @@ public class GlobalExceptionHandler {
                 "Internal server error",
                 9999,
                 "project-team121.9999",
+                request != null ? request.getRequestURI() : null
+        );
+    }
+
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    @ResponseBody
+    public ResponseEntity<Object> handleMethodNotSupported(
+            HttpRequestMethodNotSupportedException ex,
+            HttpServletRequest request
+    ) {
+        String message = "Phương thức " + ex.getMethod() + " không được hỗ trợ cho endpoint này. Vui lòng kiểm tra lại (GET/POST/PUT/DELETE).";
+        return ResponseUtils.errorRaw(
+                HttpStatus.METHOD_NOT_ALLOWED,
+                message,
+                4050,
+                "project-team121.4050",
                 request != null ? request.getRequestURI() : null
         );
     }

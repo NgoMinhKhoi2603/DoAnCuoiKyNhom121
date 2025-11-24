@@ -21,8 +21,19 @@ public class DeviceRequest {
     @NotNull
     private DeviceStatus status;
 
-    private String config; // JSON string
+    private String config;
     private LocalDateTime installedAt;
-    private String locationId;
+
+    private String location;
+
+    @Size(max = 100)
+    private String province;
+
+    @Size(max = 100)
+    private String district;
+
+    @Size(max = 100)
+    private String ward;
+
     private String typeId;
 }

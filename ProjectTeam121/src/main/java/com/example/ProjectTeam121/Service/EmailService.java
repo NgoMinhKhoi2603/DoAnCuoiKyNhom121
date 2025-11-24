@@ -39,4 +39,28 @@ public class EmailService {
             throw new IllegalStateException("Failed to send email");
         }
     }
+
+    @Async
+    public void sendResetPasswordEmail(String toEmail, String subject, String resetUrl) {
+        try {
+            MimeMessage mimeMessage = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, "utf-8");
+
+            String htmlMsg = "<h3>Yêu cầu đặt lại mật khẩu</h3>"
+                    + "<p>Bạn đã yêu cầu đặt lại mật khẩu. Vui lòng nhấn vào link bên dưới để tiếp tục:</p>"
+                    + "<a href=\"" + resetUrl + "\">ĐẶT LẠI MẬT KHẨU</a>"
+                    + "<p>Link này sẽ hết hạn sau 24 giờ. Nếu bạn không yêu cầu, vui lòng bỏ qua email này.</p>";
+
+            helper.setText(htmlMsg, true);
+            helper.setTo(toEmail);
+            helper.setSubject(subject);
+            helper.setFrom("noreply@projectteam121.com");
+
+            mailSender.send(mimeMessage);
+            log.info("Reset password email sent to: {}", toEmail);
+        } catch (MessagingException e) {
+            log.error("Failed to send email", e);
+            throw new IllegalStateException("Failed to send email");
+        }
+    }
 }

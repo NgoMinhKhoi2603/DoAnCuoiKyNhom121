@@ -6,13 +6,9 @@ import com.example.ProjectTeam121.Dto.Iot.Request.DeviceRequest;
 import com.example.ProjectTeam121.Dto.Iot.Response.DeviceResponse;
 import com.example.ProjectTeam121.Entity.Iot.Device;
 import com.example.ProjectTeam121.Entity.Iot.DeviceType;
-import com.example.ProjectTeam121.Entity.Iot.Location;
-// import com.example.ProjectTeam121.Entity.User; // <- Bỏ
 import com.example.ProjectTeam121.Mapper.Iot.DeviceMapper;
 import com.example.ProjectTeam121.Repository.Iot.DeviceRepository;
 import com.example.ProjectTeam121.Repository.Iot.DeviceTypeRepository;
-import com.example.ProjectTeam121.Repository.Iot.LocationRepository;
-// import com.example.ProjectTeam121.Repository.UserRepository; // <- Bỏ
 import com.example.ProjectTeam121.Service.HistoryService;
 import com.example.ProjectTeam121.utils.SecurityUtils;
 import com.example.ProjectTeam121.utils.exceptions.ErrorCode;
@@ -28,7 +24,6 @@ import org.springframework.transaction.annotation.Transactional;
 public class DeviceService {
 
     private final DeviceRepository deviceRepository;
-    private final LocationRepository locationRepository;
     private final DeviceTypeRepository deviceTypeRepository;
     private final DeviceMapper deviceMapper;
     private final HistoryService historyService;
@@ -45,18 +40,14 @@ public class DeviceService {
             throw new ValidationException(ErrorCode.DEVICE_IDENTIFIER_EXISTS, "Unique identifier already exists");
         }
 
-        // Tìm Location (không cần check ownership)
-        Location location = locationRepository.findById(request.getLocationId())
-                .orElseThrow(() -> new ValidationException(ErrorCode.LOCATION_NOT_FOUND, "Location not found"));
-
         // Tìm DeviceType (global)
         DeviceType deviceType = deviceTypeRepository.findById(request.getTypeId())
                 .orElseThrow(() -> new ValidationException(ErrorCode.DEVICE_TYPE_NOT_FOUND, "DeviceType not found"));
 
         Device device = deviceMapper.toEntity(request);
-        // device.setUser(currentUser); // <- Bỏ
-        device.setLocation(location);
         device.setDeviceType(deviceType);
+
+        // Các trường location, province... được map tự động bởi mapper
 
         Device savedDevice = deviceRepository.save(device);
 
@@ -70,15 +61,8 @@ public class DeviceService {
     public DeviceResponse update(String id, DeviceRequest request) {
         Device device = findDeviceById(id);
 
-        // Cập nhật các trường
+        // Cập nhật các trường (bao gồm location, province...)
         deviceMapper.updateEntityFromRequest(request, device);
-
-        // Cập nhật Location (nếu thay đổi)
-        if (!device.getLocation().getId().equals(request.getLocationId())) {
-            Location location = locationRepository.findById(request.getLocationId())
-                    .orElseThrow(() -> new ValidationException(ErrorCode.LOCATION_NOT_FOUND, "Location not found"));
-            device.setLocation(location);
-        }
 
         // Cập nhật DeviceType (nếu thay đổi)
         if (!device.getDeviceType().getId().equals(request.getTypeId())) {

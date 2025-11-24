@@ -17,4 +17,5 @@ public class CurrentUserResponse {
     private List<String> roles;
     private String token;
     private LocalDateTime createdAt;
+    private String avatar;
 }

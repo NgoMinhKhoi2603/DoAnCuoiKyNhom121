@@ -34,8 +34,6 @@ public enum ErrorCode {
     ROLE_NOT_FOUND(1028, "error.role_not_found", HttpStatus.NOT_FOUND),
     // Lỗi chung cho IoT
     OWNERSHIP_VIOLATION(1029, "error.ownership_violation", HttpStatus.FORBIDDEN),
-    // Lỗi cho Location
-    LOCATION_NOT_FOUND(1030, "error.location_not_found", HttpStatus.NOT_FOUND),
     // Lỗi cho DeviceType
     DEVICE_TYPE_NOT_FOUND(1031, "error.device_type_not_found", HttpStatus.NOT_FOUND),
     DEVICE_TYPE_NAME_EXISTS(1032, "error.device_type_name_exists", HttpStatus.BAD_REQUEST),
@@ -50,7 +48,15 @@ public enum ErrorCode {
 
     COMMENTING_BLOCKED(1038, "error.commenting_blocked", HttpStatus.FORBIDDEN),
 
-    COMMENT_NOT_FOUND(1039, "error.comment_not_found", HttpStatus.NOT_FOUND);
+    COMMENT_NOT_FOUND(1039, "error.comment_not_found", HttpStatus.NOT_FOUND),
+
+    USERNAME_EXISTS(1040, "error.username_exists", HttpStatus.BAD_REQUEST),
+
+    EMAIL_EXISTS(1041, "error.email_exists", HttpStatus.BAD_REQUEST),
+
+    PASSWORD_NOT_CORRECT(1042, "error.password_not_correct", HttpStatus.BAD_REQUEST),
+
+    PASSWORD_CONFIRMATION_INCORRECT(1043, "error.password_confirmation_incorrect", HttpStatus.BAD_REQUEST);
 
 
     private final int code;

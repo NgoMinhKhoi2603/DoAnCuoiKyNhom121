@@ -1,6 +1,8 @@
 package com.example.ProjectTeam121.Controller;
 
 import com.example.ProjectTeam121.Dto.Request.AuthenticationRequest;
+import com.example.ProjectTeam121.Dto.Request.ForgotPasswordRequest;
+import com.example.ProjectTeam121.Dto.Request.ResetPasswordRequest;
 import com.example.ProjectTeam121.Dto.Response.AuthenticationResponse;
 import com.example.ProjectTeam121.Dto.Request.RegisterRequest;
 import com.example.ProjectTeam121.Dto.Response.CurrentUserResponse;
@@ -51,6 +53,7 @@ public class AuthenticationController {
                         .email(user.getEmail())
                         .unit(user.getUnit() != null ? user.getUnit().name() : null)
                         .unitDescription(user.getUnit() != null ? user.getUnit().getDescription() : null)
+                        .avatar(user.getAvatar())
                         .roles(
                                 user.getRoles()
                                         .stream()
@@ -66,5 +69,15 @@ public class AuthenticationController {
     @GetMapping("/activate")
     public ResponseEntity<String> confirm(@RequestParam("token") String token) {
         return ResponseEntity.ok(service.activateAccount(token));
+    }
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<String> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+        return ResponseEntity.ok(service.forgotPassword(request));
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<String> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        return ResponseEntity.ok(service.resetPassword(request));
     }
 }

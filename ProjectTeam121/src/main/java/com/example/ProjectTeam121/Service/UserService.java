@@ -2,7 +2,10 @@ package com.example.ProjectTeam121.Service;
 
 import com.example.ProjectTeam121.Dto.Enum.ActionLog;
 import com.example.ProjectTeam121.Dto.Enum.HistoryType;
+import com.example.ProjectTeam121.Dto.Request.AvatarRequest;
+import com.example.ProjectTeam121.Dto.Request.ChangePasswordRequest;
 import com.example.ProjectTeam121.Dto.Response.UserResponse;
+import com.example.ProjectTeam121.Dto.Response.UserStatisticsResponse;
 import com.example.ProjectTeam121.Entity.Role;
 import com.example.ProjectTeam121.Entity.User;
 import com.example.ProjectTeam121.Mapper.UserMapper;
@@ -15,17 +18,22 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Service
 @RequiredArgsConstructor
 public class UserService {
 
     private final UserRepository userRepository;
-    private final RoleRepository roleRepository; // Thêm RoleRepository
+    private final RoleRepository roleRepository;
     private final UserMapper userMapper;
     private final HistoryService historyService;
+    private final PasswordEncoder passwordEncoder;
 
     private User findUserByUsername(String username) {
         return userRepository.findByUsername(username)
@@ -144,5 +152,87 @@ public class UserService {
                 savedUser.getUsername(), SecurityUtils.getCurrentUsername());
 
         return userMapper.toUserResponse(savedUser);
+    }
+
+    /**
+     * Cập nhật Avatar cho user đang đăng nhập
+     */
+    @Transactional
+    public void updateAvatar(AvatarRequest request) {
+        // Lấy username của người đang đăng nhập
+        String currentUsername = SecurityUtils.getCurrentUsername();
+        User user = findUserByUsername(currentUsername);
+
+        // Lưu chuỗi base64 vào database
+        user.setAvatar(request.getBase64Image());
+
+        User savedUser = userRepository.save(user);
+
+        // Ghi log lịch sử
+        historyService.saveHistory(savedUser, ActionLog.UPDATE, HistoryType.USER_MANAGEMENT,
+                savedUser.getUsername(), currentUsername);
+    }
+
+    /**
+     * Thay đổi mật khẩu
+     */
+    @Transactional
+    public void changePassword(ChangePasswordRequest request) {
+        String currentUsername = SecurityUtils.getCurrentUsername();
+        User user = findUserByUsername(currentUsername);
+
+        // 1. Kiểm tra mật khẩu cũ (Quan trọng)
+        if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
+            // SỬA: Dùng mã lỗi cụ thể
+            throw new ValidationException(ErrorCode.PASSWORD_NOT_CORRECT, "Mật khẩu hiện tại không đúng");
+        }
+
+        // 2. Kiểm tra xác nhận mật khẩu
+        if (!request.getNewPassword().equals(request.getConfirmationPassword())) {
+            // SỬA: Dùng mã lỗi cụ thể
+            throw new ValidationException(ErrorCode.PASSWORD_CONFIRMATION_INCORRECT, "Mật khẩu xác nhận không khớp");
+        }
+
+        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        User savedUser = userRepository.save(user);
+
+        historyService.saveHistory(savedUser, ActionLog.UPDATE, HistoryType.USER_MANAGEMENT,
+                "Change Password", currentUsername);
+    }
+
+    /**
+     * Thống kê
+     */
+    @Transactional(readOnly = true)
+    public UserStatisticsResponse getUserStatistics() {
+        // 1. Tổng số người dùng
+        long total = userRepository.count();
+
+        // 2. Người dùng khả thi (Enabled=true, Locked=false)
+        long active = userRepository.countByEnabledTrueAndLockedFalse();
+
+        // 3. Người dùng Online (Hoạt động trong 5 phút gần đây)
+        long online = userRepository.countByLastActiveAfter(LocalDateTime.now().minusMinutes(5));
+
+        // 4. Người dùng mới hôm nay (Từ 00:00 sáng nay)
+        long news = userRepository.countByCreatedAtAfter(LocalDate.now().atStartOfDay());
+
+        return UserStatisticsResponse.builder()
+                .totalUsers(total)
+                .activeUsers(active)
+                .onlineUsers(online)
+                .newUsersToday(news)
+                .build();
+    }
+
+    /**
+     * Cập nhật Last Active, hàm này sẽ được gọi ngầm mỗi khi user request
+     */
+    @Transactional
+    public void updateLastActive(String username) {
+        userRepository.findByUsername(username).ifPresent(user -> {
+            user.setLastActive(LocalDateTime.now());
+            userRepository.save(user);
+        });
     }
 }

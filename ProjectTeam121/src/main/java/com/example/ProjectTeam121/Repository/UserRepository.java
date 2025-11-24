@@ -14,4 +14,13 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     List<User> findByEnabledFalseAndCreatedAtBefore(LocalDateTime cutoffTime);
     Optional<User> findByEmail(String email);
+
+    // Đếm user khả thi (Đã kích hoạt và Chưa bị khóa)
+    long countByEnabledTrueAndLockedFalse();
+
+    // Đếm user online (Có hoạt động sau thời gian X)
+    long countByLastActiveAfter(LocalDateTime time);
+
+    // Đếm user mới đăng ký (Tạo sau thời gian X)
+    long countByCreatedAtAfter(LocalDateTime time);
 }

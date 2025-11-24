@@ -2,7 +2,6 @@ package com.example.ProjectTeam121.Entity.Iot;
 
 import com.example.ProjectTeam121.Dto.Enum.DeviceStatus;
 import com.example.ProjectTeam121.Entity.BaseEntity;
-// import com.example.ProjectTeam121.Entity.User; // <- Đã loại bỏ
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -21,8 +20,6 @@ import java.util.Set;
 @NoArgsConstructor
 @Entity
 @Table(name = "DEVICES", indexes = {
-        // @Index(name = "idx_device_user", columnList = "user_id"), // <- Đã loại bỏ
-        @Index(name = "idx_device_location", columnList = "location_id"),
         @Index(name = "idx_device_type", columnList = "type_id")
 })
 public class Device extends BaseEntity {
@@ -30,7 +27,7 @@ public class Device extends BaseEntity {
     @NotBlank
     @Size(max = 255)
     @Column(nullable = false, unique = true)
-    private String uniqueIdentifier; // Serial Number hoặc MAC Address
+    private String uniqueIdentifier;
 
     @NotBlank
     @Size(max = 255)
@@ -43,16 +40,27 @@ public class Device extends BaseEntity {
     private DeviceStatus status = DeviceStatus.OFFLINE;
 
     @Column(columnDefinition = "TEXT")
-    private String config; // Lưu JSON config
+    private String config;
 
     private LocalDateTime installedAt;
 
     private LocalDateTime lastSeen;
 
-    // Quan hệ: Thiết bị này ở Vị trí nào
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "location_id")
-    private Location location;
+    @Column(columnDefinition = "TEXT")
+    private String location;
+
+    @Size(max = 100)
+    @Column(length = 100)
+    private String province;
+
+    @Size(max = 100)
+    @Column(length = 100)
+    private String district;
+
+    @Size(max = 100)
+    @Column(length = 100)
+    private String ward;
+    // --------------------------
 
     // Quan hệ: Thiết bị này thuộc Loại nào
     @ManyToOne(fetch = FetchType.LAZY)

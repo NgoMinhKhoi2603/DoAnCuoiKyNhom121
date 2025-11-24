@@ -3,6 +3,7 @@ package com.example.ProjectTeam121.Controller.Admin;
 import com.example.ProjectTeam121.Dto.Request.AssignRoleRequest;
 import com.example.ProjectTeam121.Dto.Response.CommentResponse;
 import com.example.ProjectTeam121.Dto.Response.UserResponse;
+import com.example.ProjectTeam121.Dto.Response.UserStatisticsResponse;
 import com.example.ProjectTeam121.Service.CommentService;
 import com.example.ProjectTeam121.Service.UserService;
 import jakarta.validation.Valid;
@@ -72,5 +73,10 @@ public class UserManagementController {
     @PostMapping("/comments/{commentId}/unhide")
     public ResponseEntity<CommentResponse> unhideComment(@PathVariable String commentId) {
         return ResponseEntity.ok(commentService.unhideComment(commentId));
+    }
+
+    @GetMapping("/users/statistics")
+    public ResponseEntity<UserStatisticsResponse> getUserStatistics() {
+        return ResponseEntity.ok(userService.getUserStatistics());
     }
 }

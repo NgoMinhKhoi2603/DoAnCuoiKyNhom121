@@ -63,6 +63,12 @@ public class User implements UserDetails, Serializable {
     @Column(nullable = false, updatable = false, columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
     private LocalDateTime createdAt;
 
+    @Column(columnDefinition = "LONGTEXT") //LONGTEXT để chứa chuỗi Base64 dài
+    private String avatar;
+
+    @Column(name = "last_active")
+    private LocalDateTime lastActive;
+
     @NotEmpty // Đảm bảo user phải có ít nhất 1 role
     @ManyToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
     @JoinTable(
