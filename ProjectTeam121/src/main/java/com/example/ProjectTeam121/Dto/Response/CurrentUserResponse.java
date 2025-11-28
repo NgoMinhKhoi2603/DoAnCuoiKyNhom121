@@ -5,6 +5,7 @@ import lombok.Builder;
 import lombok.Data;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Set;
 
 @Data
 @AllArgsConstructor
@@ -16,7 +17,7 @@ public class CurrentUserResponse {
     private String avatar;          // Ảnh đại diện
     private String unit;            // Mã khoa/đơn vị
     private String unitDescription; // Tên đầy đủ khoa/đơn vị
-    private List<String> roles;     // Danh sách quyền
+    private Set<String> roles;     // Danh sách quyền
     private String token;           // JWT Token hiện tại
 
     private boolean enabled;
