@@ -10,12 +10,19 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 public class CurrentUserResponse {
+    private Long id;
     private String username;
     private String email;
-    private String unit;
-    private String unitDescription;
-    private List<String> roles;
-    private String token;
+    private String avatar;          // Ảnh đại diện
+    private String unit;            // Mã khoa/đơn vị
+    private String unitDescription; // Tên đầy đủ khoa/đơn vị
+    private List<String> roles;     // Danh sách quyền
+    private String token;           // JWT Token hiện tại
+
+    private boolean enabled;
+    private boolean locked;
+    private boolean commentingLocked;
+
     private LocalDateTime createdAt;
-    private String avatar;
+    private LocalDateTime lastActive; // Thời gian online cuối
 }

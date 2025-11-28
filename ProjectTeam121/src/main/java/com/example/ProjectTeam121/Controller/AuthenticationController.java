@@ -40,30 +40,11 @@ public class AuthenticationController {
 
     @GetMapping("/current")
     public ResponseEntity<CurrentUserResponse> getCurrentUser(@RequestHeader("Authorization") String authHeader) {
-
+        // Lấy token raw từ header (bỏ chữ "Bearer ")
         String token = authHeader.replace("Bearer ", "");
-        String username = SecurityUtils.getCurrentUsername();
 
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
-        return ResponseEntity.ok(
-                CurrentUserResponse.builder()
-                        .username(user.getUsername())
-                        .email(user.getEmail())
-                        .unit(user.getUnit() != null ? user.getUnit().name() : null)
-                        .unitDescription(user.getUnit() != null ? user.getUnit().getDescription() : null)
-                        .avatar(user.getAvatar())
-                        .roles(
-                                user.getRoles()
-                                        .stream()
-                                        .map(Role::getName)
-                                        .toList()
-                        )
-                        .token(token)
-                        .createdAt(user.getCreatedAt())
-                        .build()
-        );
+        // Gọi Service xử lý
+        return ResponseEntity.ok(service.getCurrentUser(token));
     }
 
     @GetMapping("/activate")

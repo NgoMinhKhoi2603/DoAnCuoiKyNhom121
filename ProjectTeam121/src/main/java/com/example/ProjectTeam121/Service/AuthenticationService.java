@@ -8,6 +8,9 @@ import com.example.ProjectTeam121.Dto.Request.ForgotPasswordRequest;
 import com.example.ProjectTeam121.Dto.Request.ResetPasswordRequest;
 import com.example.ProjectTeam121.Dto.Response.AuthenticationResponse;
 import com.example.ProjectTeam121.Dto.Request.RegisterRequest;
+import com.example.ProjectTeam121.Dto.Response.CurrentUserResponse;
+import com.example.ProjectTeam121.Mapper.UserMapper;
+import com.example.ProjectTeam121.utils.SecurityUtils;
 import com.example.ProjectTeam121.Entity.Role;
 import com.example.ProjectTeam121.Entity.User;
 import com.example.ProjectTeam121.Repository.RoleRepository;
@@ -42,6 +45,7 @@ public class AuthenticationService {
     private final HistoryService historyService;
     private final VerificationTokenRepository tokenRepository;
     private final EmailService emailService;
+    private final UserMapper userMapper;
 
 //    private final RedisTemplate<String, Object> redisTemplate;
 
@@ -197,5 +201,23 @@ public class AuthenticationService {
                 "Reset Password via Email", user.getUsername());
 
         return "Đặt lại mật khẩu thành công. Bạn có thể đăng nhập ngay bây giờ.";
+    }
+
+    @Transactional(readOnly = true)
+    public CurrentUserResponse getCurrentUser(String token) {
+        // 1. Lấy username từ SecurityContext (đã được Filter xác thực)
+        String username = SecurityUtils.getCurrentUsername();
+
+        // 2. Tìm user trong DB
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        // 3. Map sang DTO response
+        CurrentUserResponse response = userMapper.toCurrentUserResponse(user);
+
+        // 4. Gán token hiện tại vào response
+        response.setToken(token);
+
+        return response;
     }
 }

@@ -1,5 +1,6 @@
 package com.example.ProjectTeam121.Mapper;
 
+import com.example.ProjectTeam121.Dto.Response.CurrentUserResponse;
 import com.example.ProjectTeam121.Dto.Response.UserResponse;
 import com.example.ProjectTeam121.Entity.Role;
 import com.example.ProjectTeam121.Entity.User;
@@ -26,6 +27,12 @@ public abstract class UserMapper {
                 .collect(Collectors.toList());
         return new PageImpl<>(responses, userPage.getPageable(), userPage.getTotalElements());
     }
+
+    @Mapping(target = "token", ignore = true)
+    @Mapping(target = "roles", expression = "java(mapRoles(user.getRoles()))")
+    @Mapping(target = "unit", expression = "java(user.getUnit() != null ? user.getUnit().name() : null)")
+    @Mapping(target = "unitDescription", expression = "java(user.getUnit() != null ? user.getUnit().getDescription() : null)")
+    public abstract CurrentUserResponse toCurrentUserResponse(User user);
 
     protected Set<String> mapRoles(Set<Role> roles) {
         if (roles == null) {
