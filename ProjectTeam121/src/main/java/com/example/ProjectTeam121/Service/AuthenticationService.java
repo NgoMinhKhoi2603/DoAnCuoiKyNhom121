@@ -17,7 +17,6 @@ import com.example.ProjectTeam121.Repository.RoleRepository;
 import com.example.ProjectTeam121.Repository.UserRepository;
 import com.example.ProjectTeam121.Security.JwtService;
 import lombok.RequiredArgsConstructor;
-//import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -29,7 +28,6 @@ import com.example.ProjectTeam121.Repository.VerificationTokenRepository;
 import com.example.ProjectTeam121.utils.exceptions.ValidationException;
 import com.example.ProjectTeam121.utils.exceptions.ErrorCode;
 import java.time.LocalDateTime;
-
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
@@ -47,32 +45,21 @@ public class AuthenticationService {
     private final EmailService emailService;
     private final UserMapper userMapper;
 
-//    private final RedisTemplate<String, Object> redisTemplate;
-
     @Value("${application.frontend.url}")
     private String frontendUrl;
 
     @Transactional
     public AuthenticationResponse register(RegisterRequest request) {
-        // 1. Kiểm tra Username
-        if (userRepository.existsByUsername(request.getUsername())) {
-            // Thay thế RuntimeException bằng ValidationException
-            throw new ValidationException(ErrorCode.USERNAME_EXISTS, "Tên đăng nhập đã tồn tại");
-        }
-
-        // 2. Kiểm tra Email
+        // Kiểm tra Email
         if (userRepository.existsByEmail(request.getEmail())) {
-            // Thay thế RuntimeException bằng ValidationException
             throw new ValidationException(ErrorCode.EMAIL_EXISTS, "Email đã được sử dụng");
         }
 
         var user = new User();
-        user.setUsername(request.getUsername());
+        user.setFullName(request.getFullName()); // Set FullName
         user.setEmail(request.getEmail());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setUnit(resolveUnitEnum(request.getUnit()));
-
-        //Đặt avatar mặc định là noimage.png
         user.setAvatar("uploads/noimage.png");
 
         Set<Role> roles = new HashSet<>();
@@ -99,8 +86,8 @@ public class AuthenticationService {
                 savedUser,
                 ActionLog.CREATE,
                 HistoryType.USER_MANAGEMENT,
-                savedUser.getUsername(),
-                savedUser.getUsername()
+                savedUser.getEmail(),
+                savedUser.getEmail()
         );
 
         return AuthenticationResponse.builder()
@@ -198,24 +185,23 @@ public class AuthenticationService {
         tokenRepository.delete(token);
 
         historyService.saveHistory(user, ActionLog.UPDATE, HistoryType.USER_MANAGEMENT,
-                "Reset Password via Email", user.getUsername());
+                "Reset Password via Email", user.getEmail());
 
         return "Đặt lại mật khẩu thành công. Bạn có thể đăng nhập ngay bây giờ.";
     }
 
     @Transactional(readOnly = true)
     public CurrentUserResponse getCurrentUser(String token) {
-        // 1. Lấy username từ SecurityContext (đã được Filter xác thực)
-        String username = SecurityUtils.getCurrentUsername();
+        // Lấy email từ SecurityContext
+        String email = SecurityUtils.getCurrentUsername();
 
-        // 2. Tìm user trong DB
-        User user = userRepository.findByUsername(username)
+        User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        // 3. Map sang DTO response
+        // Map sang DTO response
         CurrentUserResponse response = userMapper.toCurrentUserResponse(user);
 
-        // 4. Gán token hiện tại vào response
+        // Gán token hiện tại vào response
         response.setToken(token);
 
         return response;

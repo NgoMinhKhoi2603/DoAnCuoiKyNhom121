@@ -46,7 +46,7 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     private void createAdminUserIfNotFound() {
-        if (!userRepository.existsByUsername("admin")) {
+        if (!userRepository.existsByEmail("admin@example.com")) {
             Role adminRole = roleRepository.findByName("ROLE_ADMIN")
                     .orElseThrow(() -> new RuntimeException("Khong tim thay ROLE_ADMIN"));
 
@@ -54,15 +54,16 @@ public class DataInitializer implements CommandLineRunner {
             roles.add(adminRole);
 
             User adminUser = new User();
-            adminUser.setUsername("admin");
+            adminUser.setFullName("Administrator");
             adminUser.setEmail("admin@example.com");
             adminUser.setPassword(passwordEncoder.encode("123456"));
             adminUser.setRoles(roles);
             adminUser.setEnabled(true);
             adminUser.setLocked(false);
+            adminUser.setCommentingLocked(false);
 
             userRepository.save(adminUser);
-            log.info("Da tao tai khoan Admin: admin / 123456");
+            log.info("Da tao tai khoan Admin: admin@example.com / 123456");
         }
     }
 }

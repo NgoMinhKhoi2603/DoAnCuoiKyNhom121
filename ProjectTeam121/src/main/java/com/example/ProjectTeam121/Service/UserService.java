@@ -35,9 +35,9 @@ public class UserService {
     private final HistoryService historyService;
     private final PasswordEncoder passwordEncoder;
 
-    private User findUserByUsername(String username) {
-        return userRepository.findByUsername(username)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
+    private User findUserByEmail(String email) {
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + email));
     }
 
     // Helper tìm Role
@@ -53,32 +53,32 @@ public class UserService {
     }
 
     @Transactional(readOnly = true)
-    public UserResponse findByUsername(String username) {
-        return userMapper.toUserResponse(findUserByUsername(username));
+    public UserResponse findByEmail(String email) {
+        return userMapper.toUserResponse(findUserByEmail(email));
     }
 
     @Transactional
-    public UserResponse lockUser(String username) {
-        User user = findUserByUsername(username);
+    public UserResponse lockUser(String email) {
+        User user = findUserByEmail(email);
         user.setLocked(true);
         User savedUser = userRepository.save(user);
 
         // Ghi log lịch sử
         historyService.saveHistory(savedUser, ActionLog.UPDATE, HistoryType.USER_MANAGEMENT,
-                savedUser.getUsername(), SecurityUtils.getCurrentUsername());
+                savedUser.getEmail(), SecurityUtils.getCurrentUsername());
 
         return userMapper.toUserResponse(savedUser);
     }
 
     @Transactional
-    public UserResponse unlockUser(String username) {
-        User user = findUserByUsername(username);
+    public UserResponse unlockUser(String email) {
+        User user = findUserByEmail(email);
         user.setLocked(false);
         User savedUser = userRepository.save(user);
 
         // Ghi log lịch sử
         historyService.saveHistory(savedUser, ActionLog.UPDATE, HistoryType.USER_MANAGEMENT,
-                savedUser.getUsername(), SecurityUtils.getCurrentUsername());
+                savedUser.getEmail(), SecurityUtils.getCurrentUsername());
 
         return userMapper.toUserResponse(savedUser);
     }
@@ -87,8 +87,8 @@ public class UserService {
      * Gán một role cho user
      */
     @Transactional
-    public UserResponse assignRole(String username, String roleName) {
-        User user = findUserByUsername(username);
+    public UserResponse assignRole(String email, String roleName) {
+        User user = findUserByEmail(email);
         Role role = findRoleByName(roleName);
 
         user.getRoles().add(role);
@@ -96,7 +96,7 @@ public class UserService {
 
         // Ghi log (Nội dung log sẽ là "Gán role [roleName] cho [username]")
         historyService.saveHistory(savedUser, ActionLog.UPDATE, HistoryType.USER_MANAGEMENT,
-                savedUser.getUsername(), SecurityUtils.getCurrentUsername());
+                savedUser.getEmail(), SecurityUtils.getCurrentUsername());
 
         return userMapper.toUserResponse(savedUser);
     }
@@ -105,8 +105,8 @@ public class UserService {
      * Xoá một role khỏi user
      */
     @Transactional
-    public UserResponse removeRole(String username, String roleName) {
-        User user = findUserByUsername(username);
+    public UserResponse removeRole(String email, String roleName) {
+        User user = findUserByEmail(email);
         Role role = findRoleByName(roleName);
 
         if (!user.getRoles().contains(role)) {
@@ -119,7 +119,7 @@ public class UserService {
 
         // Ghi log (Nội dung log sẽ là "Xoá role [roleName] khỏi [username]")
         historyService.saveHistory(savedUser, ActionLog.UPDATE, HistoryType.USER_MANAGEMENT,
-                savedUser.getUsername(), SecurityUtils.getCurrentUsername());
+                savedUser.getEmail(), SecurityUtils.getCurrentUsername());
 
         return userMapper.toUserResponse(savedUser);
     }
@@ -128,13 +128,13 @@ public class UserService {
      * Chặn khả năng bình luận của user
      */
     @Transactional
-    public UserResponse lockCommenting(String username) {
-        User user = findUserByUsername(username);
+    public UserResponse lockCommenting(String email) {
+        User user = findUserByEmail(email);
         user.setCommentingLocked(true);
         User savedUser = userRepository.save(user);
 
         historyService.saveHistory(savedUser, ActionLog.UPDATE, HistoryType.USER_MANAGEMENT,
-                savedUser.getUsername(), SecurityUtils.getCurrentUsername());
+                savedUser.getEmail(), SecurityUtils.getCurrentUsername());
 
         return userMapper.toUserResponse(savedUser);
     }
@@ -143,13 +143,13 @@ public class UserService {
      * Mở khóa khả năng bình luận của user
      */
     @Transactional
-    public UserResponse unlockCommenting(String username) {
-        User user = findUserByUsername(username);
+    public UserResponse unlockCommenting(String email) {
+        User user = findUserByEmail(email);
         user.setCommentingLocked(false);
         User savedUser = userRepository.save(user);
 
         historyService.saveHistory(savedUser, ActionLog.UPDATE, HistoryType.USER_MANAGEMENT,
-                savedUser.getUsername(), SecurityUtils.getCurrentUsername());
+                savedUser.getEmail(), SecurityUtils.getCurrentUsername());
 
         return userMapper.toUserResponse(savedUser);
     }
@@ -159,9 +159,9 @@ public class UserService {
      */
     @Transactional
     public void updateAvatar(AvatarRequest request) {
-        // Lấy username của người đang đăng nhập
-        String currentUsername = SecurityUtils.getCurrentUsername();
-        User user = findUserByUsername(currentUsername);
+        // SecurityUtils.getCurrentUsername() giờ trả về email
+        String currentUserEmail = SecurityUtils.getCurrentUsername();
+        User user = findUserByEmail(currentUserEmail);
 
         // Lưu chuỗi base64 vào database
         user.setAvatar(request.getBase64Image());
@@ -170,7 +170,7 @@ public class UserService {
 
         // Ghi log lịch sử
         historyService.saveHistory(savedUser, ActionLog.UPDATE, HistoryType.USER_MANAGEMENT,
-                savedUser.getUsername(), currentUsername);
+                savedUser.getEmail(), currentUserEmail);
     }
 
     /**
@@ -178,8 +178,8 @@ public class UserService {
      */
     @Transactional
     public void changePassword(ChangePasswordRequest request) {
-        String currentUsername = SecurityUtils.getCurrentUsername();
-        User user = findUserByUsername(currentUsername);
+        String currentUserEmail = SecurityUtils.getCurrentUsername();
+        User user = findUserByEmail(currentUserEmail);
 
         // 1. Kiểm tra mật khẩu cũ (Quan trọng)
         if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
@@ -197,7 +197,7 @@ public class UserService {
         User savedUser = userRepository.save(user);
 
         historyService.saveHistory(savedUser, ActionLog.UPDATE, HistoryType.USER_MANAGEMENT,
-                "Change Password", currentUsername);
+                "Change Password", currentUserEmail);
     }
 
     /**
@@ -229,8 +229,8 @@ public class UserService {
      * Cập nhật Last Active, hàm này sẽ được gọi ngầm mỗi khi user request
      */
     @Transactional
-    public void updateLastActive(String username) {
-        userRepository.findByUsername(username).ifPresent(user -> {
+    public void updateLastActive(String email) {
+        userRepository.findByEmail(email).ifPresent(user -> {
             user.setLastActive(LocalDateTime.now());
             userRepository.save(user);
         });

@@ -18,7 +18,6 @@ import java.util.stream.Collectors;
 
 @Entity
 @Table(name = "users", indexes = {
-        @Index(name = "idx_user_username", columnList = "username"),
         @Index(name = "idx_user_email", columnList = "email")
 })
 @Getter
@@ -32,9 +31,9 @@ public class User implements UserDetails, Serializable {
     private Long id;
 
     @NotBlank
-    @Size(min = 3, max = 50)
-    @Column(nullable = false, unique = true, length = 50)
-    private String username;
+    @Size(min = 3, max = 100)
+    @Column(name = "full_name", nullable = false, length = 100)
+    private String fullName;
 
     @NotBlank
     @Size(min = 6, max = 100)
@@ -63,13 +62,13 @@ public class User implements UserDetails, Serializable {
     @Column(nullable = false, updatable = false, columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
     private LocalDateTime createdAt;
 
-    @Column(columnDefinition = "LONGTEXT") //LONGTEXT để chứa chuỗi Base64 dài
+    @Column(columnDefinition = "LONGTEXT")
     private String avatar;
 
     @Column(name = "last_active")
     private LocalDateTime lastActive;
 
-    @NotEmpty // Đảm bảo user phải có ít nhất 1 role
+    @NotEmpty
     @ManyToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
     @JoinTable(
             name = "user_roles",
@@ -78,13 +77,16 @@ public class User implements UserDetails, Serializable {
     )
     private Set<Role> roles = new HashSet<>();
 
-
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
     }
 
-    // ... (Các phương thức UserDetails giữ nguyên) ...
+    @Override
+    public String getUsername() {
+        return this.email;
+    }
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return roles.stream()
@@ -93,22 +95,14 @@ public class User implements UserDetails, Serializable {
     }
 
     @Override
-    public boolean isAccountNonExpired() {
-        return true;
-    }
+    public boolean isAccountNonExpired() { return true; }
 
     @Override
-    public boolean isAccountNonLocked() {
-        return !this.locked;
-    }
+    public boolean isAccountNonLocked() { return !this.locked; }
 
     @Override
-    public boolean isCredentialsNonExpired() {
-        return true;
-    }
+    public boolean isCredentialsNonExpired() { return true; }
 
     @Override
-    public boolean isEnabled() {
-        return this.enabled;
-    }
+    public boolean isEnabled() { return this.enabled; }
 }

@@ -34,16 +34,17 @@ public class CommentService {
                 .orElseThrow(() -> new ValidationException(ErrorCode.COMMENT_NOT_FOUND, "Không tìm thấy bình luận"));
     }
 
-    // Helper tìm user
-    private User findUserByUsername(String username) {
-        return userRepository.findByUsername(username)
-                .orElseThrow(() -> new UsernameNotFoundException("Không tìm thấy user: " + username));
+    // Helper tìm user (Đã đổi sang tìm bằng email)
+    private User findUserByEmail(String email) {
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException("Không tìm thấy user với email: " + email));
     }
 
     @Transactional
     public CommentResponse createComment(CommentRequest request) {
-        String currentUsername = SecurityUtils.getCurrentUsername();
-        User currentUser = findUserByUsername(currentUsername);
+        // Lấy email của người đang đăng nhập
+        String currentEmail = SecurityUtils.getCurrentUsername();
+        User currentUser = findUserByEmail(currentEmail);
 
         // Kiểm tra user có bị chặn bình luận không
         if (currentUser.isCommentingLocked()) {
@@ -59,11 +60,11 @@ public class CommentService {
             comment.setParent(parent);
         }
 
-        // BaseEntity sẽ tự động gán createdBy
+        // BaseEntity sẽ tự động gán createdBy (là email)
         Comment savedComment = commentRepository.save(comment);
 
         historyService.saveHistory(savedComment, ActionLog.CREATE, HistoryType.COMMENT_MANAGEMENT,
-                savedComment.getId(), currentUsername);
+                savedComment.getId(), currentEmail);
 
         return commentMapper.toResponse(savedComment);
     }

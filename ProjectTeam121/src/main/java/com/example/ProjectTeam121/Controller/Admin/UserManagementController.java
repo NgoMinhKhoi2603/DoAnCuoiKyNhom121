@@ -26,43 +26,43 @@ public class UserManagementController {
         return ResponseEntity.ok(userService.getPage(pageable));
     }
 
-    @GetMapping("/users/{username}")
-    public ResponseEntity<UserResponse> getUserByUsername(@PathVariable String username) {
-        return ResponseEntity.ok(userService.findByUsername(username));
+    @GetMapping("/users/{email}")
+    public ResponseEntity<UserResponse> getUserByEmail(@PathVariable String email) {
+        return ResponseEntity.ok(userService.findByEmail(email));
     }
 
-    @PostMapping("/users/{username}/lock")
-    public ResponseEntity<UserResponse> lockUser(@PathVariable String username) {
-        return ResponseEntity.ok(userService.lockUser(username));
+    @PostMapping("/users/{email}/lock")
+    public ResponseEntity<UserResponse> lockUser(@PathVariable String email) {
+        return ResponseEntity.ok(userService.lockUser(email));
     }
 
-    @PostMapping("/users/{username}/unlock")
-    public ResponseEntity<UserResponse> unlockUser(@PathVariable String username) {
-        return ResponseEntity.ok(userService.unlockUser(username));
+    @PostMapping("/users/{email}/unlock")
+    public ResponseEntity<UserResponse> unlockUser(@PathVariable String email) {
+        return ResponseEntity.ok(userService.unlockUser(email));
     }
 
-    @PostMapping("/users/{username}/assign-role")
+    @PostMapping("/users/{email}/assign-role")
     public ResponseEntity<UserResponse> assignRole(
-            @PathVariable String username,
+            @PathVariable String email,
             @Valid @RequestBody AssignRoleRequest request) {
-        return ResponseEntity.ok(userService.assignRole(username, request.getRoleName()));
+        return ResponseEntity.ok(userService.assignRole(email, request.getRoleName()));
     }
 
-    @PostMapping("/users/{username}/remove-role")
+    @PostMapping("/users/{email}/remove-role")
     public ResponseEntity<UserResponse> removeRole(
-            @PathVariable String username,
+            @PathVariable String email,
             @Valid @RequestBody AssignRoleRequest request) {
-        return ResponseEntity.ok(userService.removeRole(username, request.getRoleName()));
+        return ResponseEntity.ok(userService.removeRole(email, request.getRoleName()));
     }
 
-    @PostMapping("/users/{username}/lock-commenting")
-    public ResponseEntity<UserResponse> lockCommenting(@PathVariable String username) {
-        return ResponseEntity.ok(userService.lockCommenting(username));
+    @PostMapping("/users/{email}/lock-commenting")
+    public ResponseEntity<UserResponse> lockCommenting(@PathVariable String email) {
+        return ResponseEntity.ok(userService.lockCommenting(email));
     }
 
-    @PostMapping("/users/{username}/unlock-commenting")
-    public ResponseEntity<UserResponse> unlockCommenting(@PathVariable String username) {
-        return ResponseEntity.ok(userService.unlockCommenting(username));
+    @PostMapping("/users/{email}/unlock-commenting")
+    public ResponseEntity<UserResponse> unlockCommenting(@PathVariable String email) {
+        return ResponseEntity.ok(userService.unlockCommenting(email));
     }
 
     @PostMapping("/comments/{commentId}/hide")

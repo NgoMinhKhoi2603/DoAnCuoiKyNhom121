@@ -12,7 +12,7 @@ import java.util.Set;
 @Builder
 public class CurrentUserResponse {
     private Long id;
-    private String username;
+    private String fullName;
     private String email;
     private String avatar;          // Ảnh đại diện
     private String unit;            // Mã khoa/đơn vị
