@@ -9,6 +9,9 @@ import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.DisabledException;
+import org.springframework.security.authentication.LockedException;
 import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -111,5 +114,41 @@ public class GlobalExceptionHandler {
                 "project-team121.4050",
                 request != null ? request.getRequestURI() : null
         );
+    }
+
+    /**
+     * Bắt lỗi sai tài khoản hoặc mật khẩu
+     */
+    @ExceptionHandler(BadCredentialsException.class)
+    @ResponseBody
+    public ResponseEntity<Object> handleBadCredentials(
+            BadCredentialsException ex,
+            HttpServletRequest request
+    ) {
+        return ResponseUtils.error(request, ErrorCode.LOGIN_BAD_CREDENTIALS, "Tài khoản hoặc mật khẩu không chính xác");
+    }
+
+    /**
+     * Bắt lỗi tài khoản bị khóa (Locked = true)
+     */
+    @ExceptionHandler(LockedException.class)
+    @ResponseBody
+    public ResponseEntity<Object> handleLocked(
+            LockedException ex,
+            HttpServletRequest request
+    ) {
+        return ResponseUtils.error(request, ErrorCode.ACCOUNT_LOCKED, "Tài khoản của bạn đã bị khóa. Vui lòng liên hệ quản trị viên.");
+    }
+
+    /**
+     * Bắt lỗi tài khoản chưa kích hoạt (Enabled = false)
+     */
+    @ExceptionHandler(DisabledException.class)
+    @ResponseBody
+    public ResponseEntity<Object> handleDisabled(
+            DisabledException ex,
+            HttpServletRequest request
+    ) {
+        return ResponseUtils.error(request, ErrorCode.ACCOUNT_DISABLED, "Tài khoản chưa được kích hoạt. Vui lòng kiểm tra email để xác thực.");
     }
 }

@@ -45,18 +45,15 @@ public enum ErrorCode {
     DEVICE_IDENTIFIER_EXISTS(1036, "error.device_identifier_exists", HttpStatus.BAD_REQUEST),
     // Lỗi cho Sensor
     SENSOR_NOT_FOUND(1037, "error.sensor_not_found", HttpStatus.NOT_FOUND),
-
     COMMENTING_BLOCKED(1038, "error.commenting_blocked", HttpStatus.FORBIDDEN),
-
     COMMENT_NOT_FOUND(1039, "error.comment_not_found", HttpStatus.NOT_FOUND),
-
     USERNAME_EXISTS(1040, "error.username_exists", HttpStatus.BAD_REQUEST),
-
     EMAIL_EXISTS(1041, "error.email_exists", HttpStatus.BAD_REQUEST),
-
     PASSWORD_NOT_CORRECT(1042, "error.password_not_correct", HttpStatus.BAD_REQUEST),
-
-    PASSWORD_CONFIRMATION_INCORRECT(1043, "error.password_confirmation_incorrect", HttpStatus.BAD_REQUEST);
+    PASSWORD_CONFIRMATION_INCORRECT(1043, "error.password_confirmation_incorrect", HttpStatus.BAD_REQUEST),
+    LOGIN_BAD_CREDENTIALS(1044, "error.login_bad_credentials", HttpStatus.UNAUTHORIZED),
+    ACCOUNT_LOCKED(1045, "error.account_locked", HttpStatus.FORBIDDEN),
+    ACCOUNT_DISABLED(1046, "error.account_disabled", HttpStatus.FORBIDDEN);
 
 
     private final int code;
