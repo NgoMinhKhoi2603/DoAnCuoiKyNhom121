@@ -2,6 +2,9 @@ package com.example.ProjectTeam121.Repository;
 
 import com.example.ProjectTeam121.Entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -22,4 +25,9 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     // Đếm user mới đăng ký (Tạo sau thời gian X)
     long countByCreatedAtAfter(LocalDateTime time);
+
+    @Modifying
+    @Transactional
+    @Query("UPDATE User u SET u.lastActive = :lastActive WHERE u.email = :email") void updateLastActive(String email, LocalDateTime lastActive);
+
 }
