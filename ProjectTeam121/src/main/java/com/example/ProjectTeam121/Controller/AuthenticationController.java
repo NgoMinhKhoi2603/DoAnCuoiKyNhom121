@@ -1,10 +1,7 @@
 package com.example.ProjectTeam121.Controller;
 
-import com.example.ProjectTeam121.Dto.Request.AuthenticationRequest;
-import com.example.ProjectTeam121.Dto.Request.ForgotPasswordRequest;
-import com.example.ProjectTeam121.Dto.Request.ResetPasswordRequest;
+import com.example.ProjectTeam121.Dto.Request.*;
 import com.example.ProjectTeam121.Dto.Response.AuthenticationResponse;
-import com.example.ProjectTeam121.Dto.Request.RegisterRequest;
 import com.example.ProjectTeam121.Dto.Response.CurrentUserResponse;
 import com.example.ProjectTeam121.Entity.Role;
 import com.example.ProjectTeam121.Entity.User;
@@ -65,5 +62,17 @@ public class AuthenticationController {
     @PostMapping("/logout")
     public ResponseEntity<String> logout() {
         return ResponseEntity.ok("Đăng xuất thành công");
+    }
+
+    //Người dùng nhập email để yêu cầu mở khóa
+    @PostMapping("/request-reactivation")
+    public ResponseEntity<String> requestReactivation(@Valid @RequestBody ReactivateRequest request) {
+        return ResponseEntity.ok(service.requestReactivation(request));
+    }
+
+    //Link trong email sẽ trỏ vào đây để xác nhận
+    @GetMapping("/confirm-reactivation")
+    public ResponseEntity<String> confirmReactivation(@RequestParam("token") String token) {
+        return ResponseEntity.ok(service.confirmReactivation(token));
     }
 }

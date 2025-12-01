@@ -63,4 +63,29 @@ public class EmailService {
             throw new IllegalStateException("Failed to send email");
         }
     }
+
+    @Async
+    public void sendReactivationEmail(String toEmail, String subject, String reactivateUrl) {
+        try {
+            MimeMessage mimeMessage = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, "utf-8");
+
+            String htmlMsg = "<h3>Chào mừng trở lại!</h3>"
+                    + "<p>Bạn đã yêu cầu mở lại tài khoản (hoặc kích hoạt lại tài khoản đã vô hiệu hóa).</p>"
+                    + "<p>Vui lòng nhấn vào đường dẫn bên dưới để kích hoạt lại ngay:</p>"
+                    + "<a href=\"" + reactivateUrl + "\">MỞ KHÓA TÀI KHOẢN</a>"
+                    + "<p>Link này có hiệu lực trong 24 giờ.</p>";
+
+            helper.setText(htmlMsg, true);
+            helper.setTo(toEmail);
+            helper.setSubject(subject);
+            helper.setFrom("noreply@projectteam121.com");
+
+            mailSender.send(mimeMessage);
+            log.info("Reactivation email sent to: {}", toEmail);
+        } catch (MessagingException e) {
+            log.error("Failed to send email", e);
+            throw new IllegalStateException("Failed to send email");
+        }
+    }
 }

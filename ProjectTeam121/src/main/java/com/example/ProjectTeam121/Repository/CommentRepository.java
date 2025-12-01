@@ -20,4 +20,6 @@ public interface CommentRepository extends JpaRepository<Comment, String> {
 
     // (Admin) Tìm trả lời (bao gồm cả bị ẩn)
     Page<Comment> findByParent_Id(String parentId, Pageable pageable);
+
+    void deleteByCreatedBy(String createdBy);
 }
