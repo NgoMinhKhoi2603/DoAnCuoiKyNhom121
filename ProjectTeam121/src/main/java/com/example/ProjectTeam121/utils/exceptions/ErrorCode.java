@@ -53,7 +53,8 @@ public enum ErrorCode {
     PASSWORD_CONFIRMATION_INCORRECT(1043, "error.password_confirmation_incorrect", HttpStatus.BAD_REQUEST),
     LOGIN_BAD_CREDENTIALS(1044, "error.login_bad_credentials", HttpStatus.UNAUTHORIZED),
     ACCOUNT_LOCKED(1045, "error.account_locked", HttpStatus.FORBIDDEN),
-    ACCOUNT_DISABLED(1046, "error.account_disabled", HttpStatus.FORBIDDEN);
+    ACCOUNT_DISABLED(1046, "error.account_disabled", HttpStatus.FORBIDDEN),
+    USER_NOT_FOUND(1047, "error.user.not.found", HttpStatus.NOT_FOUND);
 
 
     private final int code;

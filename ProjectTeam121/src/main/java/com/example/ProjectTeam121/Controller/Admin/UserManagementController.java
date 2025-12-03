@@ -1,6 +1,7 @@
 package com.example.ProjectTeam121.Controller.Admin;
 
 import com.example.ProjectTeam121.Dto.Request.AssignRoleRequest;
+import com.example.ProjectTeam121.Dto.Request.UpdateUserRequest;
 import com.example.ProjectTeam121.Dto.Response.CommentResponse;
 import com.example.ProjectTeam121.Dto.Response.UserResponse;
 import com.example.ProjectTeam121.Dto.Response.UserStatisticsResponse;

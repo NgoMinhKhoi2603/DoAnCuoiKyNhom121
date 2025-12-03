@@ -55,7 +55,8 @@ public CorsConfigurationSource corsConfigurationSource() {
 
                         // Bất kỳ ai đã đăng nhập (ADMIN hoặc USER) đều có quyền GET (Xem)
                         .requestMatchers(HttpMethod.GET, "/api/v1/iot/**").authenticated()
-
+                        .requestMatchers("/api/v1/auth/**").permitAll()
+                        .requestMatchers("/uploads/**").permitAll()
                         // Tất cả các request khác
                         .anyRequest().authenticated()
                 )
