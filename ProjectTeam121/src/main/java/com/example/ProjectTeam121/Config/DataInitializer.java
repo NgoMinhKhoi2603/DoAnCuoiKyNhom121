@@ -50,8 +50,12 @@ public class DataInitializer implements CommandLineRunner {
             Role adminRole = roleRepository.findByName("ROLE_ADMIN")
                     .orElseThrow(() -> new RuntimeException("Khong tim thay ROLE_ADMIN"));
 
+            Role userRole = roleRepository.findByName("ROLE_USER") // Tìm thêm ROLE_USER
+                    .orElseThrow(() -> new RuntimeException("Khong tim thay ROLE_USER"));
+
             Set<Role> roles = new HashSet<>();
             roles.add(adminRole);
+            roles.add(userRole);
 
             User adminUser = new User();
             adminUser.setFullName("Administrator");
