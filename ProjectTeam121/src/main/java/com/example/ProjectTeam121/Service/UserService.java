@@ -4,6 +4,7 @@ import com.example.ProjectTeam121.Dto.Enum.ActionLog;
 import com.example.ProjectTeam121.Dto.Enum.HistoryType;
 import com.example.ProjectTeam121.Dto.Request.AvatarRequest;
 import com.example.ProjectTeam121.Dto.Request.ChangePasswordRequest;
+import com.example.ProjectTeam121.Dto.Request.UpdateUserRequest;
 import com.example.ProjectTeam121.Dto.Response.UserResponse;
 import com.example.ProjectTeam121.Dto.Response.UserStatisticsResponse;
 import com.example.ProjectTeam121.Entity.Role;
@@ -234,10 +235,7 @@ public class UserService {
      */
     @Transactional
     public void updateLastActive(String email) {
-        userRepository.findByEmail(email).ifPresent(user -> {
-            user.setLastActive(LocalDateTime.now());
-            userRepository.save(user);
-        });
+        userRepository.updateLastActive(email, LocalDateTime.now());
     }
 
     /**

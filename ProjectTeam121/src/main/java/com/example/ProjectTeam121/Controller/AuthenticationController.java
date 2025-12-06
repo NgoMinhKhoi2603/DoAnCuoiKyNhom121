@@ -3,6 +3,7 @@ package com.example.ProjectTeam121.Controller;
 import com.example.ProjectTeam121.Dto.Request.*;
 import com.example.ProjectTeam121.Dto.Response.AuthenticationResponse;
 import com.example.ProjectTeam121.Dto.Response.CurrentUserResponse;
+import com.example.ProjectTeam121.Dto.Response.UserResponse;
 import com.example.ProjectTeam121.Entity.Role;
 import com.example.ProjectTeam121.Entity.User;
 import com.example.ProjectTeam121.Repository.UserRepository;
@@ -12,7 +13,11 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.security.Principal;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -44,14 +49,43 @@ public class AuthenticationController {
         return ResponseEntity.ok(service.getCurrentUser(token));
     }
 
-    @GetMapping("/activate")
-    public ResponseEntity<String> confirm(@RequestParam("token") String token) {
-        return ResponseEntity.ok(service.activateAccount(token));
+    @GetMapping(value = "/activate", produces = "text/html; charset=UTF-8")
+    public ResponseEntity<String> activateAccount(@RequestParam String token) {
+        try {
+            String message = service.activateAccount(token);
+
+            return ResponseEntity.ok(
+                    "<div style='margin:40px auto;max-width:500px;padding:20px;" +
+                            "font-family:Segoe UI;border:1px solid #eee;border-radius:12px;" +
+                            "text-align:center;box-shadow:0 4px 12px rgba(0,0,0,0.05)'>" +
+                            "<h2 style='color:green'>✔ " + message + "</h2>" +
+                            "<a href='http://localhost:3000/login' style='display:inline-block;margin-top:20px;" +
+                            "padding:10px 18px;background:#c8102e;color:#fff;text-decoration:none;" +
+                            "border-radius:8px;font-weight:bold;'>Đến trang đăng nhập</a>" +
+                            "</div>"
+            );
+
+        } catch (Exception ex) {
+            return ResponseEntity.status(400).body(
+                    "<div style='margin:40px auto;max-width:500px;padding:20px;" +
+                            "font-family:Segoe UI;border:1px solid #eee;border-radius:12px;" +
+                            "text-align:center;box-shadow:0 4px 12px rgba(0,0,0,0.05)'>" +
+                            "<h2 style='color:red'>✘ Kích hoạt thất bại!</h2>" +
+                            "<p>" + ex.getMessage() + "</p>" +
+                            "</div>"
+            );
+        }
     }
+
 
     @PostMapping("/forgot-password")
     public ResponseEntity<String> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
         return ResponseEntity.ok(service.forgotPassword(request));
+    }
+
+    @PostMapping("/change-password")
+    public ResponseEntity<String> changePassword(@Valid @RequestBody ChangePasswordRequest request) {
+        return ResponseEntity.ok(service.changePassword(request));
     }
 
     @PostMapping("/reset-password")
@@ -64,6 +98,7 @@ public class AuthenticationController {
         return ResponseEntity.ok("Đăng xuất thành công");
     }
 
+
     //Người dùng nhập email để yêu cầu mở khóa
     @PostMapping("/request-reactivation")
     public ResponseEntity<String> requestReactivation(@Valid @RequestBody ReactivateRequest request) {
@@ -75,4 +110,13 @@ public class AuthenticationController {
     public ResponseEntity<String> confirmReactivation(@RequestParam("token") String token) {
         return ResponseEntity.ok(service.confirmReactivation(token));
     }
+
+    @PutMapping(value = "/update", consumes = {"multipart/form-data"})
+    public ResponseEntity<CurrentUserResponse> updateCurrentUser(
+            @RequestPart("data") UpdateUserRequest request,
+            @RequestPart(value = "avatar", required = false) MultipartFile avatarFile) {
+        System.out.println("AvatarFile = " + (avatarFile != null ? avatarFile.getOriginalFilename() : "NULL"));
+        return ResponseEntity.ok(service.updateCurrentUser(request, avatarFile));
+    }
+
 }

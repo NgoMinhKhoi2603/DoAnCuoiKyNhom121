@@ -1,6 +1,7 @@
 package com.example.ProjectTeam121.Controller.Admin;
 
 import com.example.ProjectTeam121.Dto.Request.AssignRoleRequest;
+import com.example.ProjectTeam121.Dto.Request.UpdateUserRequest;
 import com.example.ProjectTeam121.Dto.Response.CommentResponse;
 import com.example.ProjectTeam121.Dto.Response.UserResponse;
 import com.example.ProjectTeam121.Dto.Response.UserStatisticsResponse;
@@ -12,9 +13,12 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.CrossOrigin;
+
 
 @RestController
 @RequestMapping("/api/v1/admin")
+@CrossOrigin(origins = "http://localhost:3000")   
 @RequiredArgsConstructor
 public class UserManagementController {
 

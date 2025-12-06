@@ -13,10 +13,13 @@ import com.example.ProjectTeam121.Entity.User;
 import com.example.ProjectTeam121.Repository.RoleRepository;
 import com.example.ProjectTeam121.Repository.UserRepository;
 import com.example.ProjectTeam121.Security.JwtService;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,10 +27,19 @@ import com.example.ProjectTeam121.Entity.VerificationToken;
 import com.example.ProjectTeam121.Repository.VerificationTokenRepository;
 import com.example.ProjectTeam121.utils.exceptions.ValidationException;
 import com.example.ProjectTeam121.utils.exceptions.ErrorCode;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -44,6 +56,8 @@ public class AuthenticationService {
 
     @Value("${application.frontend.url}")
     private String frontendUrl;
+
+    private static final Path AVATAR_FOLDER = Paths.get(System.getProperty("user.dir"), "uploads", "avatars");
 
     @Transactional
     public AuthenticationResponse register(RegisterRequest request) {
@@ -95,7 +109,8 @@ public class AuthenticationService {
     private UnitEnum resolveUnitEnum(String input) {
         try {
             return UnitEnum.valueOf(input.toUpperCase());
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
 
         // Trường hợp FE gửi mô tả đầy đủ
         return Arrays.stream(UnitEnum.values())
@@ -162,7 +177,7 @@ public class AuthenticationService {
 
     @Transactional
     public String resetPassword(ResetPasswordRequest request) {
-        // Kiểm tra khớp password
+
         if (!request.getNewPassword().equals(request.getConfirmationPassword())) {
             throw new ValidationException(ErrorCode.PASSWORD_CONFIRMATION_INCORRECT, "Mật khẩu xác nhận không khớp");
         }
@@ -187,6 +202,32 @@ public class AuthenticationService {
         return "Đặt lại mật khẩu thành công. Bạn có thể đăng nhập ngay bây giờ.";
     }
 
+    @Transactional
+    public String changePassword(ChangePasswordRequest request) {
+
+        User currentUser = (User) SecurityContextHolder.getContext()
+                .getAuthentication()
+                .getPrincipal();
+
+        if (!passwordEncoder.matches(request.getCurrentPassword(), currentUser.getPassword())) {
+            throw new ValidationException(ErrorCode.INVALID_INPUT, "Mật khẩu hiện tại không đúng");
+        }
+
+        if (!request.getNewPassword().equals(request.getConfirmationPassword())) {
+            throw new ValidationException(ErrorCode.PASSWORD_CONFIRMATION_INCORRECT,
+                    "Mật khẩu xác nhận không khớp");
+        }
+
+        currentUser.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        userRepository.save(currentUser);
+
+        // Log lại
+        historyService.saveHistory(currentUser, ActionLog.UPDATE, HistoryType.USER_MANAGEMENT,
+                "User Changed Password", currentUser.getEmail());
+
+        return "Đổi mật khẩu thành công!";
+    }
+
     @Transactional(readOnly = true)
     public CurrentUserResponse getCurrentUser(String token) {
         // Lấy email từ SecurityContext
@@ -202,6 +243,11 @@ public class AuthenticationService {
         response.setToken(token);
 
         return response;
+    }
+
+    private User findUserByEmail(String email) {
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + email));
     }
 
     // 1. xử lý Yêu cầu mở khóa
@@ -265,5 +311,58 @@ public class AuthenticationService {
                 "Account Reactivated via Email", user.getEmail());
 
         return "Tài khoản đã được mở khóa thành công! Bạn có thể đăng nhập ngay.";
+    }
+
+
+    @Transactional
+    public CurrentUserResponse updateCurrentUser(UpdateUserRequest request, MultipartFile avatarFile) {
+
+        String email = SecurityUtils.getCurrentUsername();
+        User user = findUserByEmail(email);
+
+        if (request.getFullName() != null)
+            user.setFullName(request.getFullName());
+
+        if (request.getUnitEnum() != null)
+            user.setUnit(request.getUnitEnum());
+
+        if (avatarFile != null && !avatarFile.isEmpty()) {
+            String avatarUrl = saveAvatar(avatarFile);
+            user.setAvatar(avatarUrl);
+        }
+        userRepository.save(user);
+
+        return userMapper.toCurrentUserResponse(user);
+    }
+
+
+    @PostConstruct
+    public void init() {
+        try {
+            if (!Files.exists(AVATAR_FOLDER)) {
+                Files.createDirectories(AVATAR_FOLDER);
+            }
+        } catch (IOException e) {
+            throw new RuntimeException("Cannot create upload folder", e);
+        }
+    }
+
+    public String saveAvatar(MultipartFile file) {
+        try {
+            System.out.println("Avatar folder = " + AVATAR_FOLDER.toAbsolutePath());
+
+            String fileName = System.currentTimeMillis() + "_" + file.getOriginalFilename();
+            Path filePath = AVATAR_FOLDER.resolve(fileName);
+
+            System.out.println("Saving to = " + filePath.toAbsolutePath());
+            System.out.println("Exists? " + Files.exists(AVATAR_FOLDER));
+
+            Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
+
+            return "/uploads/avatars/" + fileName;
+
+        } catch (IOException e) {
+            throw new RuntimeException("Error saving avatar", e);
+        }
     }
 }
