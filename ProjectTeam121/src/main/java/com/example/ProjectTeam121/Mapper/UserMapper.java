@@ -16,6 +16,7 @@ import java.util.stream.Collectors;
 @Mapper(componentModel = "spring")
 public abstract class UserMapper {
     @Mapping(target = "roles", expression = "java(mapRoles(user.getRoles()))")
+    @Mapping(target = "unit", source = "unit")
     public abstract UserResponse toUserResponse(User user);
 
     public abstract List<UserResponse> toUserResponseList(List<User> users);
