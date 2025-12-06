@@ -70,7 +70,7 @@ public class AuthenticationService {
         user.setFullName(request.getFullName()); // Set FullName
         user.setEmail(request.getEmail());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
-        user.setUnit(resolveUnitEnum(request.getUnit()));
+        user.setUnit((request.getUnit()));
         user.setAvatar("uploads/noimage.png");
 
         Set<Role> roles = new HashSet<>();
@@ -106,18 +106,7 @@ public class AuthenticationService {
                 .build();
     }
 
-    private UnitEnum resolveUnitEnum(String input) {
-        try {
-            return UnitEnum.valueOf(input.toUpperCase());
-        } catch (Exception ignored) {
-        }
 
-        // Trường hợp FE gửi mô tả đầy đủ
-        return Arrays.stream(UnitEnum.values())
-                .filter(u -> u.getDescription().equalsIgnoreCase(input))
-                .findFirst()
-                .orElseThrow(() -> new RuntimeException("Invalid unit: " + input));
-    }
 
     public AuthenticationResponse authenticate(AuthenticationRequest request) {
         // 1. Spring Security sẽ kiểm tra username/password và check User.isAccountNonLocked() (tức là check trường locked của Admin)
@@ -284,7 +273,7 @@ public class AuthenticationService {
         tokenRepository.save(token);
 
         // Tạo link (Trỏ về API backend hoặc Frontend tùy cấu hình, ở đây trỏ về API để test)
-        String reactivateLink = "http://localhost:8080/api/v1/auth/confirm-reactivation?token=" + token.getToken();
+        String reactivateLink = frontendUrl + "/api/v1/auth/confirm-reactivation?token=" + token.getToken();
 
         // Gửi mail
         emailService.sendReactivationEmail(user.getEmail(), "Yêu cầu mở khóa tài khoản", reactivateLink);
