@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <title>Mở khóa tài khoản</title>
+
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #f6f7f9; margin: 0; padding: 0; }
+        .container {
+            max-width: 600px; margin: 40px auto; padding: 30px;
+            background: #fff; border-radius: 16px; border: 1px solid #eee;
+            box-shadow: 0 8px 18px rgba(0,0,0,0.06);
+        }
+        .logo {
+            text-align: center; font-size: 32px; font-weight: 900;
+            color: #fff; width: 80px; height: 80px;
+            background: linear-gradient(135deg,#b11226,#e61b36);
+            border-radius: 20px; line-height: 80px;
+            margin: 0 auto 20px;
+        }
+        h2 { color: #c8102e; text-align: center; }
+        .btn {
+            display: inline-block; padding: 14px 30px; margin: 20px auto;
+            background: linear-gradient(90deg,#c8102e,#e61b36);
+            color: white !important; text-decoration: none;
+            border-radius: 10px; font-weight: bold;
+        }
+        .footer { margin-top: 30px; text-align: center; color: #777; font-size: 13px; }
+    </style>
+</head>
+
+<body>
+<div class="container">
+    <div class="logo">PTIT</div>
+    <h2>Mở khóa tài khoản</h2>
+
+    <p>Xin chào,</p>
+    <p>
+        Bạn đã yêu cầu mở khóa tài khoản PTIT IoT Platform.
+        Nhấn vào nút bên dưới để kích hoạt lại tài khoản:
+    </p>
+
+    <a th:href="${reactivateLink}" class="btn">MỞ KHÓA TÀI KHOẢN</a>
+
+    <p>Liên kết có hiệu lực trong <b>15 phút</b>.</p>
+
+    <div class="footer">
+        Email được gửi tự động – vui lòng không trả lời email này.<br>
+        © 2025 PTIT IoT Platform.
+    </div>
+</div>
+</body>
+</html>

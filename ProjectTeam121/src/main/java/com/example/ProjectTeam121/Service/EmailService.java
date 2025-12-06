@@ -11,6 +11,8 @@ import org.springframework.stereotype.Service;
 import org.thymeleaf.context.Context;
 import org.thymeleaf.spring6.SpringTemplateEngine;
 
+import java.util.Map;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -124,4 +126,30 @@ public class EmailService {
             throw new IllegalStateException("Failed to send email");
         }
     }
+
+    @Async
+    public void sendTemplateEmail(String to, String subject, String template, Map<String, Object> model) {
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, "utf-8");
+
+            Context context = new Context();
+            context.setVariables(model);
+
+            String html = templateEngine.process(template, context);
+
+            helper.setTo(to);
+            helper.setSubject(subject);
+            helper.setText(html, true);
+            helper.setFrom("noreply@projectteam121.com");
+
+            mailSender.send(message);
+            log.info("Email sent to {}", to);
+
+        } catch (MessagingException e) {
+            log.error("Failed to send email", e);
+        }
+    }
+
+
 }
