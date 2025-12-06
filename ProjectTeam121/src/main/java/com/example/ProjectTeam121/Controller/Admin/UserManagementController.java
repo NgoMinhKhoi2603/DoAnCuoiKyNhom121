@@ -11,6 +11,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.repository.query.Param;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -82,5 +83,12 @@ public class UserManagementController {
     @GetMapping("/users/statistics")
     public ResponseEntity<UserStatisticsResponse> getUserStatistics() {
         return ResponseEntity.ok(userService.getUserStatistics());
+    }
+
+    @PutMapping("/users/update/{email}")
+    public ResponseEntity<UserResponse> updateUser(
+            @PathVariable String email,
+            @Valid @RequestBody UpdateUserRequest request) {
+        return ResponseEntity.ok(userService.updateUserInfo(request, email));
     }
 }

@@ -289,4 +289,19 @@ public class UserService {
         historyService.saveHistory(user, ActionLog.DELETE, HistoryType.USER_MANAGEMENT,
                 "User wiped all data", currentEmail);
     }
+
+    @Transactional
+    public UserResponse updateUserInfo(UpdateUserRequest request, String email) {
+        User user = findUserByEmail(email);
+
+        user.setFullName(request.getFullName());
+        user.setUnit(request.getUnit());
+
+        User savedUser = userRepository.save(user);
+
+        historyService.saveHistory(savedUser, ActionLog.UPDATE, HistoryType.USER_MANAGEMENT,
+                savedUser.getEmail(), email);
+
+        return userMapper.toUserResponse(savedUser);
+    }
 }

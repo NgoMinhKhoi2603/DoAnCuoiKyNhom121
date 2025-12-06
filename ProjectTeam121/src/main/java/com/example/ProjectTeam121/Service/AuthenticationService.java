@@ -323,8 +323,8 @@ public class AuthenticationService {
         if (request.getFullName() != null)
             user.setFullName(request.getFullName());
 
-        if (request.getUnitEnum() != null)
-            user.setUnit(request.getUnitEnum());
+        if (request.getUnit() != null)
+            user.setUnit(request.getUnit());
 
         if (avatarFile != null && !avatarFile.isEmpty()) {
             String avatarUrl = saveAvatar(avatarFile);

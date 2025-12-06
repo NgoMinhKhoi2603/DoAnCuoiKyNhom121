@@ -6,6 +6,6 @@ import lombok.Data;
 @Data
 public class UpdateUserRequest {
     private String fullName;
-    private UnitEnum unitEnum;
+    private UnitEnum unit;
     private String avatar;
 }
