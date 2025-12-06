@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <title>Kích hoạt tài khoản</title>
+
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background-color: #f6f7f9;
+            padding: 0;
+            margin: 0;
+        }
+
+        .container {
+            max-width: 600px;
+            background: #ffffff;
+            margin: 40px auto;
+            padding: 30px;
+            border-radius: 16px;
+            border: 1px solid #eee;
+            box-shadow: 0 8px 18px rgba(0, 0, 0, 0.06);
+        }
+
+        h2 {
+            color: #c8102e;
+            text-align: center;
+        }
+
+        .logo {
+            text-align: center;
+            font-size: 32px;
+            font-weight: 900;
+            color: #fff;
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #b11226, #e61b36);
+            border-radius: 20px;
+            line-height: 80px;
+            margin: 0 auto 20px;
+        }
+
+        .btn {
+            display: block;
+            width: fit-content;
+            margin: 25px auto;
+            padding: 14px 30px;
+            background: linear-gradient(90deg, #c8102e, #e61b36);
+            color: #fff !important;
+            text-decoration: none;
+            border-radius: 10px;
+            font-weight: bold;
+            font-size: 16px;
+        }
+
+        .footer {
+            margin-top: 30px;
+            font-size: 13px;
+            text-align: center;
+            color: #777;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+    <div class="logo">PTIT</div>
+    <h2>PTIT IoT Platform</h2>
+
+    <p>Xin chào,</p>
+    <p>
+        Cảm ơn bạn đã đăng ký tài khoản.
+        Vui lòng nhấn nút bên dưới để kích hoạt tài khoản của bạn:
+    </p>
+
+    <a th:href="${activationLink}"
+       target="_blank"
+       style="display:inline-block;padding:12px 24px;background:#E53935;color:#fff;
+              text-decoration:none;border-radius:8px;font-weight:bold;">
+        KÍCH HOẠT TÀI KHOẢN
+    </a>
+
+    <p>Liên kết sẽ hết hạn sau <b>24 giờ</b>.</p>
+
+    <div class="footer">
+        Email được gửi tự động – vui lòng không trả lời email này.<br />
+        © 2025 PTIT IoT Platform.
+    </div>
+</div>
+
+</body>
+</html>
