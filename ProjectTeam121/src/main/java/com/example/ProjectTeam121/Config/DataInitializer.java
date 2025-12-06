@@ -61,6 +61,7 @@ public class DataInitializer implements CommandLineRunner {
             adminUser.setEnabled(true);
             adminUser.setLocked(false);
             adminUser.setCommentingLocked(false);
+            adminUser.setAvatar("uploads/noimage.png");
 
             userRepository.save(adminUser);
             log.info("Da tao tai khoan Admin: admin@example.com / 123456");
