@@ -250,6 +250,69 @@ public class AuthenticationService {
                 .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + email));
     }
 
+    // 1. xử lý Yêu cầu mở khóa
+    @Transactional
+    public String requestReactivation(ReactivateRequest request) {
+        // Tìm user theo email
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new ValidationException(ErrorCode.RESOURCE_NOT_FOUND, "Email không tồn tại trong hệ thống"));
+
+        // Kiểm tra xem Admin có đang khóa tài khoản này không
+        if (user.isLocked()) {
+            throw new ValidationException(ErrorCode.ACCOUNT_LOCKED,
+                    "Tài khoản của bạn đã bị khóa bởi Quản trị viên do vi phạm. Vui lòng liên hệ Admin để được hỗ trợ.");
+        }
+
+        // Nếu tài khoản đang hoạt động bình thường thì không cần mở
+        if (user.isEnabled()) {
+            return "Tài khoản này đang hoạt động bình thường, không cần mở khóa.";
+        }
+
+        // Xóa token cũ nếu có (để tránh rác DB)
+        tokenRepository.findByUser(user).ifPresent(tokenRepository::delete);
+
+        // Tạo token mới
+        VerificationToken token = new VerificationToken(user);
+        tokenRepository.save(token);
+
+        // Tạo link (Trỏ về API backend hoặc Frontend tùy cấu hình, ở đây trỏ về API để test)
+        String reactivateLink = "http://localhost:8080/api/v1/auth/confirm-reactivation?token=" + token.getToken();
+
+        // Gửi mail
+        emailService.sendReactivationEmail(user.getEmail(), "Yêu cầu mở khóa tài khoản", reactivateLink);
+
+        // Ghi log
+        historyService.saveHistory(user, ActionLog.UPDATE, HistoryType.USER_MANAGEMENT,
+                "Request Reactivation", user.getEmail());
+
+        return "Email xác nhận mở khóa đã được gửi. Vui lòng kiểm tra hộp thư.";
+    }
+
+    // 2. Xác nhận token để mở khóa
+    @Transactional
+    public String confirmReactivation(String token) {
+        VerificationToken verificationToken = tokenRepository.findByToken(token)
+                .orElseThrow(() -> new ValidationException(ErrorCode.INVALID_INPUT, "Mã xác thực không hợp lệ hoặc không tồn tại"));
+
+        if (verificationToken.getExpiryDate().isBefore(LocalDateTime.now())) {
+            throw new ValidationException(ErrorCode.INVALID_INPUT, "Mã xác thực đã hết hạn");
+        }
+
+        User user = verificationToken.getUser();
+
+        // Kích hoạt lại (Enable = true)
+        user.setEnabled(true);
+        userRepository.save(user);
+
+        // Xóa token sau khi dùng xong
+        tokenRepository.delete(verificationToken);
+
+        historyService.saveHistory(user, ActionLog.UPDATE, HistoryType.USER_MANAGEMENT,
+                "Account Reactivated via Email", user.getEmail());
+
+        return "Tài khoản đã được mở khóa thành công! Bạn có thể đăng nhập ngay.";
+    }
+
 
     @Transactional
     public CurrentUserResponse updateCurrentUser(UpdateUserRequest request, MultipartFile avatarFile) {

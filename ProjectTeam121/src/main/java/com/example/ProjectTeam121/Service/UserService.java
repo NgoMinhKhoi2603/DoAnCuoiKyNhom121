@@ -10,6 +10,8 @@ import com.example.ProjectTeam121.Dto.Response.UserStatisticsResponse;
 import com.example.ProjectTeam121.Entity.Role;
 import com.example.ProjectTeam121.Entity.User;
 import com.example.ProjectTeam121.Mapper.UserMapper;
+import com.example.ProjectTeam121.Repository.CommentRepository;
+import com.example.ProjectTeam121.Repository.HistoryRepository;
 import com.example.ProjectTeam121.Repository.RoleRepository;
 import com.example.ProjectTeam121.Repository.UserRepository;
 import com.example.ProjectTeam121.utils.SecurityUtils;
@@ -35,6 +37,8 @@ public class UserService {
     private final UserMapper userMapper;
     private final HistoryService historyService;
     private final PasswordEncoder passwordEncoder;
+    private final CommentRepository commentRepository;
+    private final HistoryRepository historyRepository;
 
     private User findUserByEmail(String email) {
         return userRepository.findByEmail(email)
@@ -232,5 +236,57 @@ public class UserService {
     @Transactional
     public void updateLastActive(String email) {
         userRepository.updateLastActive(email, LocalDateTime.now());
+    }
+
+    /**
+     * Chức năng 1: Người dùng tự khóa tài khoản (Soft Delete)
+     * Yêu cầu xác nhận mật khẩu
+     */
+    @Transactional
+    public void deactivateAccount(String password) {
+        String currentEmail = SecurityUtils.getCurrentUsername();
+        User user = findUserByEmail(currentEmail);
+
+        // 1. Kiểm tra mật khẩu
+        if (!passwordEncoder.matches(password, user.getPassword())) {
+            throw new ValidationException(ErrorCode.PASSWORD_NOT_CORRECT, "Mật khẩu không đúng, không thể khóa tài khoản");
+        }
+
+        // 2. Khóa tài khoản
+        user.setEnabled(false);
+        userRepository.save(user);
+
+        // 3. Ghi log
+        historyService.saveHistory(user, ActionLog.UPDATE, HistoryType.USER_MANAGEMENT,
+                "User self-deactivated", currentEmail);
+    }
+
+    /**
+     * Chức năng 2: Xóa sạch dữ liệu nhưng giữ tài khoản (Reset Data)
+     * Yêu cầu xác nhận mật khẩu
+     */
+    @Transactional
+    public void deleteAllUserData(String password) {
+        String currentEmail = SecurityUtils.getCurrentUsername();
+        User user = findUserByEmail(currentEmail);
+
+        // 1. Kiểm tra mật khẩu
+        if (!passwordEncoder.matches(password, user.getPassword())) {
+            throw new ValidationException(ErrorCode.PASSWORD_NOT_CORRECT, "Mật khẩu không đúng, không thể xóa dữ liệu");
+        }
+
+        // 2. Xóa dữ liệu liên quan
+        // Xóa Comment
+        commentRepository.deleteByCreatedBy(currentEmail);
+        // Xóa History
+        historyRepository.deleteByCreatedBy(currentEmail);
+
+        // 3. Reset thông tin cá nhân về mặc định
+        user.setAvatar("uploads/noimage.png");
+        userRepository.save(user);
+
+        // 4. Ghi log
+        historyService.saveHistory(user, ActionLog.DELETE, HistoryType.USER_MANAGEMENT,
+                "User wiped all data", currentEmail);
     }
 }

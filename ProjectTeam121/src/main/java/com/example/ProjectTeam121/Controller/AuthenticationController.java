@@ -98,6 +98,19 @@ public class AuthenticationController {
         return ResponseEntity.ok("Đăng xuất thành công");
     }
 
+
+    //Người dùng nhập email để yêu cầu mở khóa
+    @PostMapping("/request-reactivation")
+    public ResponseEntity<String> requestReactivation(@Valid @RequestBody ReactivateRequest request) {
+        return ResponseEntity.ok(service.requestReactivation(request));
+    }
+
+    //Link trong email sẽ trỏ vào đây để xác nhận
+    @GetMapping("/confirm-reactivation")
+    public ResponseEntity<String> confirmReactivation(@RequestParam("token") String token) {
+        return ResponseEntity.ok(service.confirmReactivation(token));
+    }
+
     @PutMapping(value = "/update", consumes = {"multipart/form-data"})
     public ResponseEntity<CurrentUserResponse> updateCurrentUser(
             @RequestPart("data") UpdateUserRequest request,
