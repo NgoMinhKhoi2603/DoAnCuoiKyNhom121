@@ -120,6 +120,7 @@ public class AuthenticationService {
     }
 
     public AuthenticationResponse authenticate(AuthenticationRequest request) {
+        // 1. Spring Security sẽ kiểm tra username/password và check User.isAccountNonLocked() (tức là check trường locked của Admin)
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
                         request.getEmail(),
@@ -128,6 +129,13 @@ public class AuthenticationService {
         );
 
         var user = userRepository.findByEmail(request.getEmail()).orElseThrow();
+
+        // 2. Kiểm tra thêm: Nếu User tự khóa (deactivated) -> Chặn đăng nhập và báo lỗi riêng
+        if (user.isDeactivated()) {
+            throw new ValidationException(ErrorCode.ACCOUNT_DISABLED,
+                    "Tài khoản đang bị vô hiệu hóa bởi người dùng. Vui lòng sử dụng chức năng mở khóa tài khoản.");
+        }
+
         var jwtToken = jwtService.generateToken(user);
         return AuthenticationResponse.builder()
                 .token(jwtToken)
@@ -255,17 +263,17 @@ public class AuthenticationService {
     public String requestReactivation(ReactivateRequest request) {
         // Tìm user theo email
         User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new ValidationException(ErrorCode.RESOURCE_NOT_FOUND, "Email không tồn tại trong hệ thống"));
+                .orElseThrow(() -> new ValidationException(ErrorCode.RESOURCE_NOT_FOUND, "Email không tồn tại"));
 
-        // Kiểm tra xem Admin có đang khóa tài khoản này không
+        //Nếu bị Admin khóa (locked = true) -> KHÔNG cho phép tự mở khóa
         if (user.isLocked()) {
             throw new ValidationException(ErrorCode.ACCOUNT_LOCKED,
-                    "Tài khoản của bạn đã bị khóa bởi Quản trị viên do vi phạm. Vui lòng liên hệ Admin để được hỗ trợ.");
+                    "Tài khoản đã bị khóa bởi Quản trị viên vi phạm quy tắc. Bạn không thể tự mở khóa.");
         }
 
-        // Nếu tài khoản đang hoạt động bình thường thì không cần mở
-        if (user.isEnabled()) {
-            return "Tài khoản này đang hoạt động bình thường, không cần mở khóa.";
+        // Nếu tài khoản bình thường (không deactivated) -> Thông báo
+        if (!user.isDeactivated()) {
+            return "Tài khoản đang hoạt động bình thường, không cần mở khóa.";
         }
 
         // Xóa token cũ nếu có (để tránh rác DB)
@@ -292,16 +300,17 @@ public class AuthenticationService {
     @Transactional
     public String confirmReactivation(String token) {
         VerificationToken verificationToken = tokenRepository.findByToken(token)
-                .orElseThrow(() -> new ValidationException(ErrorCode.INVALID_INPUT, "Mã xác thực không hợp lệ hoặc không tồn tại"));
+                .orElseThrow(() -> new ValidationException(ErrorCode.INVALID_INPUT, "Mã không hợp lệ"));
 
         if (verificationToken.getExpiryDate().isBefore(LocalDateTime.now())) {
-            throw new ValidationException(ErrorCode.INVALID_INPUT, "Mã xác thực đã hết hạn");
+            throw new ValidationException(ErrorCode.INVALID_INPUT, "Mã đã hết hạn");
         }
 
         User user = verificationToken.getUser();
 
-        // Kích hoạt lại (Enable = true)
-        user.setEnabled(true);
+        // Mở khóa trạng thái deactivated
+        user.setDeactivated(false);
+
         userRepository.save(user);
 
         // Xóa token sau khi dùng xong

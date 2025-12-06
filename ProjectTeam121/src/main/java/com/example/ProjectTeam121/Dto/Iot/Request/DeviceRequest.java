@@ -22,9 +22,14 @@ public class DeviceRequest {
     private DeviceStatus status;
 
     private String config;
+
     private LocalDateTime installedAt;
 
     private String location;
+
+    @NotBlank
+    @Size(max = 50)
+    private String deviceCode;
 
     @Size(max = 100)
     private String province;

@@ -239,8 +239,7 @@ public class UserService {
     }
 
     /**
-     * Chức năng 1: Người dùng tự khóa tài khoản (Soft Delete)
-     * Yêu cầu xác nhận mật khẩu
+     * Chức năng: Người dùng tự khóa tài khoản (Self Deactivate)
      */
     @Transactional
     public void deactivateAccount(String password) {
@@ -252,13 +251,14 @@ public class UserService {
             throw new ValidationException(ErrorCode.PASSWORD_NOT_CORRECT, "Mật khẩu không đúng, không thể khóa tài khoản");
         }
 
-        // 2. Khóa tài khoản
-        user.setEnabled(false);
+        // 2. Set trạng thái TỰ KHÓA (deactivated)
+        user.setDeactivated(true);
+
         userRepository.save(user);
 
         // 3. Ghi log
         historyService.saveHistory(user, ActionLog.UPDATE, HistoryType.USER_MANAGEMENT,
-                "User self-deactivated", currentEmail);
+                "User self-deactivated account", currentEmail);
     }
 
     /**

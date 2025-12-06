@@ -40,6 +40,11 @@ public class DeviceService {
             throw new ValidationException(ErrorCode.DEVICE_IDENTIFIER_EXISTS, "Unique identifier already exists");
         }
 
+        if (deviceRepository.existsByDeviceCode(request.getDeviceCode())) {
+            // Nếu bạn chưa thêm ErrorCode mới thì dùng tạm INVALID_INPUT
+            throw new ValidationException(ErrorCode.DEVICE_CODE_EXISTS, "Mã thiết bị (Device Code) đã tồn tại");
+        }
+
         // Tìm DeviceType (global)
         DeviceType deviceType = deviceTypeRepository.findById(request.getTypeId())
                 .orElseThrow(() -> new ValidationException(ErrorCode.DEVICE_TYPE_NOT_FOUND, "DeviceType not found"));
@@ -69,6 +74,11 @@ public class DeviceService {
             DeviceType deviceType = deviceTypeRepository.findById(request.getTypeId())
                     .orElseThrow(() -> new ValidationException(ErrorCode.DEVICE_TYPE_NOT_FOUND, "DeviceType not found"));
             device.setDeviceType(deviceType);
+        }
+
+        if (!device.getDeviceCode().equals(request.getDeviceCode())
+                && deviceRepository.existsByDeviceCode(request.getDeviceCode())) {
+            throw new ValidationException(ErrorCode.DEVICE_CODE_EXISTS, "Mã thiết bị (Device Code) đã tồn tại");
         }
 
         Device updatedDevice = deviceRepository.save(device);

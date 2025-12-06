@@ -57,6 +57,10 @@ public class User implements UserDetails, Serializable {
 
     @NotNull
     @Column(nullable = false)
+    private boolean deactivated = false;
+
+    @NotNull
+    @Column(nullable = false)
     private boolean commentingLocked = false;
 
     @Column(nullable = false, updatable = false, columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")

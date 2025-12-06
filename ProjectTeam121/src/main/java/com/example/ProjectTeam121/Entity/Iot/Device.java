@@ -46,6 +46,11 @@ public class Device extends BaseEntity {
 
     private LocalDateTime lastSeen;
 
+    @NotBlank
+    @Size(max = 50)
+    @Column(name = "device_code", nullable = false, unique = true)
+    private String deviceCode;
+
     @Column(columnDefinition = "TEXT")
     private String location;
 
