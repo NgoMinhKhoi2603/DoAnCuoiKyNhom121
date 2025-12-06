@@ -102,13 +102,35 @@ public class AuthenticationController {
     //Người dùng nhập email để yêu cầu mở khóa
     @PostMapping("/request-reactivation")
     public ResponseEntity<String> requestReactivation(@Valid @RequestBody ReactivateRequest request) {
-        return ResponseEntity.ok(service.requestReactivation(request));
+        service.requestReactivation(request);
+        return ResponseEntity.ok("Yêu cầu mở khóa tài khoản đã được gửi. Vui lòng kiểm tra email để xác nhận.");
     }
 
     //Link trong email sẽ trỏ vào đây để xác nhận
     @GetMapping("/confirm-reactivation")
-    public ResponseEntity<String> confirmReactivation(@RequestParam("token") String token) {
-        return ResponseEntity.ok(service.confirmReactivation(token));
+    public ResponseEntity<String> confirmReactivation(@RequestParam String token) {
+
+        service.confirmReactivation(token);
+
+        String html = """
+            <html>
+            <body style="font-family:Segoe UI;text-align:center;padding-top:50px;">
+                <h2 style="color:green;">Tài khoản đã mở khóa thành công!</h2>
+                <p>Bạn sẽ được chuyển đến trang đăng nhập trong 3 giây...</p>
+
+                <script>
+                    setTimeout(function() {
+                        window.location.href = "http://localhost:3000/login";
+                    }, 3000);
+                </script>
+            </body>
+            </html>
+            """;
+
+        return ResponseEntity.ok()
+                .header("Content-Type", "text/html; charset=UTF-8")
+                .body(html);
+
     }
 
     @PutMapping(value = "/update", consumes = {"multipart/form-data"})

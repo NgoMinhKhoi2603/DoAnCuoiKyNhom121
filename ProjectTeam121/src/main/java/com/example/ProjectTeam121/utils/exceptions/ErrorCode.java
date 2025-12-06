@@ -55,8 +55,8 @@ public enum ErrorCode {
     ACCOUNT_LOCKED(1045, "error.account_locked", HttpStatus.FORBIDDEN),
     ACCOUNT_DISABLED(1046, "error.account_disabled", HttpStatus.FORBIDDEN),
     USER_NOT_FOUND(1047, "error_user_not_found", HttpStatus.NOT_FOUND),
-    DEVICE_CODE_EXISTS(1048, "error.device_code_already_exists", HttpStatus.BAD_REQUEST);
-
+    DEVICE_CODE_EXISTS(1048, "error.device_code_already_exists", HttpStatus.BAD_REQUEST),
+    ACCOUNT_DEACTIVATED(1049, "error.account_deactivated", HttpStatus.FORBIDDEN);
 
     private final int code;
     private final String messageKey;
