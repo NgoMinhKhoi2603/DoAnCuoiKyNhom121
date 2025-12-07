@@ -156,18 +156,31 @@ public class AuthenticationService {
 
     @Transactional
     public String forgotPassword(ForgotPasswordRequest request) {
-        User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new ValidationException(ErrorCode.RESOURCE_NOT_FOUND, "Email không tồn tại trong hệ thống"));
 
-        // Xóa token cũ nếu có để tránh lỗi Unique Constraint
-        tokenRepository.findByUser(user).ifPresent(tokenRepository::delete);
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new ValidationException(
+                        ErrorCode.RESOURCE_NOT_FOUND,
+                        "Email không tồn tại trong hệ thống"
+                ));
+
+        // Xóa token cũ nếu có
+        tokenRepository.findByUser(user).ifPresent(t -> {
+            tokenRepository.delete(t);
+            tokenRepository.flush();
+        });
 
         // Tạo token mới
         VerificationToken token = new VerificationToken(user);
         tokenRepository.save(token);
 
-        String resetLink = frontendUrl + "/reset-password?token=" + token.getToken();
-        emailService.sendResetPasswordEmail(user.getEmail(), "Yêu cầu đặt lại mật khẩu", resetLink);
+        String resetLink = frontendUrl + "/login?token=" + token.getToken();
+
+        emailService.sendTemplate(
+                user.getEmail(),
+                "Đặt lại mật khẩu",
+                "email/reset-password-email", // Template dùng để GỬI EMAIL
+                Map.of("resetLink", resetLink)
+        );
 
         return "Link đặt lại mật khẩu đã được gửi đến email của bạn.";
     }
