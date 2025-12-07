@@ -18,7 +18,6 @@ public class DeviceResponse extends BaseIotResponse {
     private LocalDateTime installedAt;
     private LocalDateTime lastSeen;
     private String location;
-    private String deviceCode;
     private String province;
     private String district;
     private String ward;

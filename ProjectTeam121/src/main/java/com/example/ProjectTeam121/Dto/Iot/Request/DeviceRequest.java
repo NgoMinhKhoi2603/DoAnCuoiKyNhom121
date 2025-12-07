@@ -27,10 +27,6 @@ public class DeviceRequest {
 
     private String location;
 
-    @NotBlank
-    @Size(max = 50)
-    private String deviceCode;
-
     @Size(max = 100)
     private String province;
 
