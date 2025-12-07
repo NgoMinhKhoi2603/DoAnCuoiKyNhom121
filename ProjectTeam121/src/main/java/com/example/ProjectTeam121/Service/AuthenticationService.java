@@ -121,7 +121,7 @@ public class AuthenticationService {
 
         // 2. Kiểm tra thêm: Nếu User tự khóa (deactivated) -> Chặn đăng nhập và báo lỗi riêng
         if (user.isDeactivated()) {
-            throw new ValidationException(ErrorCode.ACCOUNT_DISABLED,
+            throw new ValidationException(ErrorCode.ACCOUNT_DEACTIVATED,
                     "Tài khoản đang bị vô hiệu hóa bởi người dùng. Vui lòng sử dụng chức năng mở khóa tài khoản.");
         }
 
