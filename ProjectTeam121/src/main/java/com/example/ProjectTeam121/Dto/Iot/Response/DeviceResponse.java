@@ -23,6 +23,6 @@ public class DeviceResponse extends BaseIotResponse {
     private String district;
     private String ward;
     private String description;
-    private String typeId;
+    private String deviceTypeId;
     private String typeName;
 }

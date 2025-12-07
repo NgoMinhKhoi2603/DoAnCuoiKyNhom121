@@ -72,7 +72,7 @@ public class Device extends BaseEntity {
 
     // Quan hệ: Thiết bị này thuộc Loại nào
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "type_id")
+    @JoinColumn(name = "device_type_id")
     private DeviceType deviceType;
 
     // Quan hệ: Một thiết bị có nhiều cảm biến

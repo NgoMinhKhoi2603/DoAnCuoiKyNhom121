@@ -13,7 +13,7 @@ public interface DeviceMapper {
     @Mapping(target = "deviceType", ignore = true)
     Device toEntity(DeviceRequest request);
 
-    @Mapping(source = "deviceType.id", target = "typeId")
+    @Mapping(source = "deviceType.id", target = "deviceTypeId")
     @Mapping(source = "deviceType.name", target = "typeName")
     DeviceResponse toResponse(Device entity);
 

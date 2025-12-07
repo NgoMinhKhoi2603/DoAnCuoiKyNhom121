@@ -46,7 +46,7 @@ public class DeviceService {
         }
 
         // Tìm DeviceType (global)
-        DeviceType deviceType = deviceTypeRepository.findById(request.getTypeId())
+        DeviceType deviceType = deviceTypeRepository.findById(request.getDeviceTypeId())
                 .orElseThrow(() -> new ValidationException(ErrorCode.DEVICE_TYPE_NOT_FOUND, "DeviceType not found"));
 
         Device device = deviceMapper.toEntity(request);
@@ -70,8 +70,8 @@ public class DeviceService {
         deviceMapper.updateEntityFromRequest(request, device);
 
         // Cập nhật DeviceType (nếu thay đổi)
-        if (!device.getDeviceType().getId().equals(request.getTypeId())) {
-            DeviceType deviceType = deviceTypeRepository.findById(request.getTypeId())
+        if (!device.getDeviceType().getId().equals(request.getDeviceTypeId())) {
+            DeviceType deviceType = deviceTypeRepository.findById(request.getDeviceTypeId())
                     .orElseThrow(() -> new ValidationException(ErrorCode.DEVICE_TYPE_NOT_FOUND, "DeviceType not found"));
             device.setDeviceType(deviceType);
         }

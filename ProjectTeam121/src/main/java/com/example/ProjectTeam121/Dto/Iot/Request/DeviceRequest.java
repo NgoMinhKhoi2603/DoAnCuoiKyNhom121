@@ -42,5 +42,5 @@ public class DeviceRequest {
 
     private String description;
 
-    private String typeId;
+    private String deviceTypeId;
 }
