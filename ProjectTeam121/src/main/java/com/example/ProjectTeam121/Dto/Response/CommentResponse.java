@@ -12,4 +12,10 @@ public class CommentResponse extends BaseResponse {
     private boolean isHidden;
     private String parentId;
     private int replyCount;
+    private String createdBy;
+    private String createdAt;
+
+    private String userEmail;
+    private String userFullName;
+    private String userAvatar;
 }

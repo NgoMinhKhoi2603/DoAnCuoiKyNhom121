@@ -18,7 +18,9 @@ public class CommentController {
     private final CommentService commentService;
 
     @PostMapping
-    public ResponseEntity<CommentResponse> createComment(@Valid @RequestBody CommentRequest request) {
+    public ResponseEntity<CommentResponse> createComment(
+            @Valid @RequestBody CommentRequest request
+    ) {
         return ResponseEntity.ok(commentService.createComment(request));
     }
 
@@ -33,5 +35,26 @@ public class CommentController {
             Pageable pageable
     ) {
         return ResponseEntity.ok(commentService.getRepliesForComment(parentId, pageable));
+    }
+
+    @PatchMapping("/{commentId}/hide")
+    public ResponseEntity<CommentResponse> hideComment(@PathVariable String commentId) {
+        return ResponseEntity.ok(commentService.hideComment(commentId));
+    }
+
+    @PatchMapping("/{commentId}/unhide")
+    public ResponseEntity<CommentResponse> unhideComment(@PathVariable String commentId) {
+        return ResponseEntity.ok(commentService.unhideComment(commentId));
+    }
+
+    @DeleteMapping("/{commentId}")
+    public ResponseEntity<String> deleteComment(@PathVariable String commentId) {
+        commentService.deleteComment(commentId);
+        return ResponseEntity.ok("Comment deleted successfully.");
+    }
+
+    @PostMapping("/{commentId}/like")
+    public ResponseEntity<Integer> toggleLike(@PathVariable String commentId) {
+        return ResponseEntity.ok(commentService.toggleLike(commentId));
     }
 }

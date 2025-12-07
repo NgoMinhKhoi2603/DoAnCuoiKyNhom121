@@ -24,29 +24,26 @@ import org.springframework.transaction.annotation.Transactional;
 public class CommentService {
 
     private final CommentRepository commentRepository;
-    private final UserRepository userRepository; // Để kiểm tra user có bị khóa comment không
+    private final UserRepository userRepository;
     private final CommentMapper commentMapper;
     private final HistoryService historyService;
 
-    // Helper tìm comment
     private Comment findCommentById(String id) {
         return commentRepository.findById(id)
                 .orElseThrow(() -> new ValidationException(ErrorCode.COMMENT_NOT_FOUND, "Không tìm thấy bình luận"));
     }
 
-    // Helper tìm user (Đã đổi sang tìm bằng email)
     private User findUserByEmail(String email) {
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("Không tìm thấy user với email: " + email));
     }
 
+
     @Transactional
     public CommentResponse createComment(CommentRequest request) {
-        // Lấy email của người đang đăng nhập
         String currentEmail = SecurityUtils.getCurrentUsername();
         User currentUser = findUserByEmail(currentEmail);
 
-        // Kiểm tra user có bị chặn bình luận không
         if (currentUser.isCommentingLocked()) {
             throw new ValidationException(ErrorCode.COMMENTING_BLOCKED, "Bạn đã bị chặn bình luận");
         }
@@ -54,13 +51,11 @@ public class CommentService {
         Comment comment = new Comment();
         comment.setContent(request.getContent());
 
-        // Nếu là trả lời, tìm bình luận cha
         if (request.getParentId() != null) {
             Comment parent = findCommentById(request.getParentId());
             comment.setParent(parent);
         }
 
-        // BaseEntity sẽ tự động gán createdBy (là email)
         Comment savedComment = commentRepository.save(comment);
 
         historyService.saveHistory(savedComment, ActionLog.CREATE, HistoryType.COMMENT_MANAGEMENT,
@@ -69,7 +64,6 @@ public class CommentService {
         return commentMapper.toResponse(savedComment);
     }
 
-    // Lấy bình luận (chỉ lấy bình luận không bị ẩn)
     @Transactional(readOnly = true)
     public Page<CommentResponse> getTopLevelComments(Pageable pageable) {
         return commentRepository.findByParentIsNullAndIsHiddenFalse(pageable)
@@ -82,29 +76,57 @@ public class CommentService {
                 .map(commentMapper::toResponse);
     }
 
-    // === CHỨC NĂNG ADMIN ===
-
     @Transactional
     public CommentResponse hideComment(String commentId) {
         Comment comment = findCommentById(commentId);
         comment.setHidden(true);
-        Comment savedComment = commentRepository.save(comment);
+        Comment updated = commentRepository.save(comment);
 
-        historyService.saveHistory(savedComment, ActionLog.UPDATE, HistoryType.COMMENT_MANAGEMENT,
-                savedComment.getId(), SecurityUtils.getCurrentUsername());
+        historyService.saveHistory(updated, ActionLog.UPDATE, HistoryType.COMMENT_MANAGEMENT,
+                updated.getId(), SecurityUtils.getCurrentUsername());
 
-        return commentMapper.toResponse(savedComment);
+        return commentMapper.toResponse(updated);
     }
 
     @Transactional
     public CommentResponse unhideComment(String commentId) {
         Comment comment = findCommentById(commentId);
         comment.setHidden(false);
-        Comment savedComment = commentRepository.save(comment);
+        Comment updated = commentRepository.save(comment);
 
-        historyService.saveHistory(savedComment, ActionLog.UPDATE, HistoryType.COMMENT_MANAGEMENT,
-                savedComment.getId(), SecurityUtils.getCurrentUsername());
+        historyService.saveHistory(updated, ActionLog.UPDATE, HistoryType.COMMENT_MANAGEMENT,
+                updated.getId(), SecurityUtils.getCurrentUsername());
 
-        return commentMapper.toResponse(savedComment);
+        return commentMapper.toResponse(updated);
     }
+
+    @Transactional
+    public void deleteComment(String commentId) {
+        Comment comment = findCommentById(commentId);
+        commentRepository.delete(comment);
+
+        historyService.saveHistory(comment, ActionLog.DELETE, HistoryType.COMMENT_MANAGEMENT,
+                comment.getId(), SecurityUtils.getCurrentUsername());
+    }
+
+    // ======================================================
+    // Like / Unlike bình luận
+    // ======================================================
+    @Transactional
+    public int toggleLike(String commentId) {
+        Comment comment = findCommentById(commentId);
+        String email = SecurityUtils.getCurrentUsername();
+
+        if (comment.isLikedByCurrentUser()) {
+            comment.unlike(email);
+        } else {
+            comment.like(email);
+        }
+
+        commentRepository.save(comment);
+        return comment.getLikes();
+    }
+
+
+
 }

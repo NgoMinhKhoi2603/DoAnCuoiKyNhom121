@@ -1,5 +1,6 @@
 package com.example.ProjectTeam121.Entity;
 
+import com.example.ProjectTeam121.utils.SecurityUtils;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
@@ -28,12 +29,41 @@ public class Comment extends BaseEntity {
     @Column(nullable = false)
     private boolean isHidden = false;
 
-    // Quan hệ: Trả lời bình luận nào (cha)
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "parent_comment_id")
     private Comment parent;
 
-    // Quan hệ: Các bình luận trả lời (con)
     @OneToMany(mappedBy = "parent", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<Comment> replies = new HashSet<>();
+
+    @Column(nullable = false)
+    private int likes = 0;
+
+    @ElementCollection
+    @CollectionTable(
+            name = "COMMENT_LIKES",
+            joinColumns = @JoinColumn(name = "comment_id")
+    )
+    @Column(name = "user_email")
+    private Set<String> likedUsers = new HashSet<>();
+
+
+    public boolean isLikedBy(String email) {
+        return likedUsers.contains(email);
+    }
+
+    public boolean isLikedByCurrentUser() {
+        String email = SecurityUtils.getCurrentUsername();
+        return likedUsers.contains(email);
+    }
+
+    public void like(String email) {
+        likedUsers.add(email);
+        likes = likedUsers.size();
+    }
+
+    public void unlike(String email) {
+        likedUsers.remove(email);
+        likes = likedUsers.size();
+    }
 }

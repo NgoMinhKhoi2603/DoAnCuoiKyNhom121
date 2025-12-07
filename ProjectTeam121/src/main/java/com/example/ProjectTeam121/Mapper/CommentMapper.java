@@ -6,19 +6,21 @@ import com.example.ProjectTeam121.Entity.Comment;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
-import org.springframework.data.domain.Page;
 
 import java.util.Set;
 
 @Mapper(componentModel = "spring")
 public interface CommentMapper extends BaseMapper<Comment, CommentRequest, CommentResponse> {
 
-    @Mapping(target = "parent", ignore = true) // Sẽ xử lý trong service
-    @Mapping(target = "content", source = "content")
+    @Override
+    @Mapping(target = "parent", ignore = true)
     Comment toEntity(CommentRequest requestDto);
 
+    @Override
     @Mapping(source = "parent.id", target = "parentId")
     @Mapping(source = "replies", target = "replyCount", qualifiedByName = "mapReplyCount")
+    @Mapping(source = "createdBy", target = "createdBy")
+    @Mapping(source = "createDate", target = "createdAt")
     CommentResponse toResponse(Comment entity);
 
     @Named("mapReplyCount")
