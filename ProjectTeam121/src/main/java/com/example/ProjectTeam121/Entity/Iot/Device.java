@@ -65,6 +65,9 @@ public class Device extends BaseEntity {
     @Size(max = 100)
     @Column(length = 100)
     private String ward;
+
+    @Column(columnDefinition = "TEXT")
+    private String description;
     // --------------------------
 
     // Quan hệ: Thiết bị này thuộc Loại nào

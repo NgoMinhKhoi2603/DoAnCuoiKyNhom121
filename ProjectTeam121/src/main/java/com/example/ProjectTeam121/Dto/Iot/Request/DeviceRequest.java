@@ -40,5 +40,7 @@ public class DeviceRequest {
     @Size(max = 100)
     private String ward;
 
+    private String description;
+
     private String typeId;
 }
