@@ -152,4 +152,23 @@ public class EmailService {
     }
 
 
+    public void sendTemplate(String to, String subject, String templateName, Map<String, Object> model) {
+        Context context = new Context();
+        context.setVariables(model);
+
+        String html = templateEngine.process(templateName, context);
+
+        try {
+            MimeMessage mime = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(mime, "UTF-8");
+            helper.setTo(to);
+            helper.setSubject(subject);
+            helper.setText(html, true);
+            mailSender.send(mime);
+        } catch (Exception e) {
+            throw new RuntimeException("Không thể gửi email", e);
+        }
+    }
+
+
 }

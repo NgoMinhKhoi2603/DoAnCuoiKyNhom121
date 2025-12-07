@@ -12,7 +12,8 @@ import java.util.UUID;
 @Getter
 @Setter
 @NoArgsConstructor
-@Table(name = "verification_tokens")
+@Table(name = "verification_tokens",
+        uniqueConstraints = @UniqueConstraint(columnNames = {"user_id"}))
 public class VerificationToken {
 
     private static final int EXPIRATION = 60 * 24; // Token hết hạn sau 24 giờ
@@ -33,8 +34,8 @@ public class VerificationToken {
 
     public VerificationToken(User user) {
         this.user = user;
-        this.expiryDate = calculateExpiryDate(EXPIRATION);
         this.token = UUID.randomUUID().toString();
+        this.expiryDate = LocalDateTime.now().plusMinutes(30);
     }
 
     private LocalDateTime calculateExpiryDate(int expiryTimeInMinutes) {
