@@ -19,5 +19,8 @@ public interface HistoryRepository extends JpaRepository<HistoryEntity, String >
     Page<HistoryEntity> findByHistoryType(HistoryType historyType, Pageable pageable);
 
     Page<HistoryEntity> findByHistoryTypeAndIdentify(HistoryType historyType, String identify, Pageable pageable);
+    
+    Page<HistoryEntity> findAllByOrderByCreateDateDesc(Pageable pageable);
 
+    void deleteByCreatedBy(String createdBy);
 }

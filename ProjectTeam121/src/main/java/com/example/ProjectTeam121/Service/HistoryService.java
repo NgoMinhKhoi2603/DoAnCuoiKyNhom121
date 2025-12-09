@@ -1,6 +1,5 @@
 package com.example.ProjectTeam121.Service;
 
-
 import com.example.ProjectTeam121.Dto.Enum.ActionLog;
 import com.example.ProjectTeam121.Dto.Enum.HistoryType;
 import com.example.ProjectTeam121.Dto.Response.HistoryResponse;
@@ -21,7 +20,6 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -30,12 +28,15 @@ import java.util.Objects;
 @Service
 @RequiredArgsConstructor
 @Transactional
-public class  HistoryService {
+public class HistoryService {
 
     private final HistoryRepository historyRepository;
     private final ObjectMapper objectMapper;
     private final HistoryMapper historyMapper;
 
+    /* ------------------------------------------------------------------
+     * 1. SAVE HISTORY (SINGLE)
+     * ------------------------------------------------------------------ */
     @Async
     public <T> void saveHistory(T entity, ActionLog action, HistoryType historyType, String identify, String createdBy) {
         try {
@@ -50,28 +51,38 @@ public class  HistoryService {
                     .build();
 
             historyRepository.save(history);
+
             log.info("Saved history for entity: {} with action: {} and type: {}",
                     entity.getClass().getSimpleName(), action, historyType);
 
         } catch (Exception e) {
-            log.warn("Error saving entity history for entity: {} with action: {} and type: {}",
+            log.warn("Error saving entity history for: {} action: {} type: {}",
                     entity.getClass().getSimpleName(), action, historyType, e);
         }
     }
 
+    /* ------------------------------------------------------------------
+     * 2. SAVE HISTORY (BATCH)
+     * ------------------------------------------------------------------ */
     @Async
-    public <T> void saveBatchHistory(List<T> entities, ActionLog action, HistoryType historyType, List<String> identifiers, String createdBy) {
+    public <T> void saveBatchHistory(List<T> entities, ActionLog action, HistoryType historyType,
+                                    List<String> identifiers, String createdBy) {
+
         try {
             if (entities == null || entities.isEmpty()) {
-                log.warn("Empty or null entities list provided for batch history save");
+                log.warn("Batch history save skipped: empty entity list");
                 return;
             }
 
             List<HistoryEntity> historyEntities = new ArrayList<>();
+
             for (int i = 0; i < entities.size(); i++) {
                 T entity = entities.get(i);
-                String identifier = Objects.isNull(identifiers) ? null : identifiers.get(i);
-                HistoryEntity historyEntity = createHistoryEntity(entity, action, historyType, identifier, createdBy);
+                String identifier = identifiers == null ? null : identifiers.get(i);
+
+                HistoryEntity historyEntity =
+                        createHistoryEntity(entity, action, historyType, identifier, createdBy);
+
                 if (historyEntity != null) {
                     historyEntities.add(historyEntity);
                 }
@@ -79,72 +90,97 @@ public class  HistoryService {
 
             if (!historyEntities.isEmpty()) {
                 historyRepository.saveAll(historyEntities);
-                log.info("Saved batch history for {} entities with action: {} and type: {}",
+
+                log.info("Saved batch history: {} items, action: {}, type: {}",
                         historyEntities.size(), action, historyType);
             }
 
         } catch (Exception e) {
-            log.warn("Error saving batch history with action: {} and type: {}", action, historyType, e);
+            log.warn("Error saving batch history - action: {} type: {}", action, historyType, e);
         }
     }
 
+    /* ------------------------------------------------------------------
+     * 3. GET ALL HISTORY (MAIN API FOR FRONTEND)
+     * ------------------------------------------------------------------ */
+    public Page<HistoryResponse> getAllHistory(Pageable pageable) {
+        try {
+            Page<HistoryEntity> entities =
+                    historyRepository.findAllByOrderByCreateDateDesc(pageable);
+
+            return historyMapper.toResponsePage(entities);
+
+        } catch (Exception e) {
+            log.error("Error retrieving all history records", e);
+            throw new RuntimeException("Failed to load history");
+        }
+    }
+
+    /* ------------------------------------------------------------------
+     * 4. GET HISTORY BY TYPE
+     * ------------------------------------------------------------------ */
     public Page<HistoryResponse> getHistoryByType(HistoryType historyType, Pageable pageable) {
         try {
-            Page<HistoryEntity> historyEntities = historyRepository.findByHistoryType(historyType, pageable);
+            Page<HistoryEntity> historyEntities =
+                    historyRepository.findByHistoryType(historyType, pageable);
+
             return historyMapper.toResponsePage(historyEntities);
+
         } catch (Exception e) {
             log.error("Error retrieving history by type: {}", historyType, e);
-            throw new RuntimeException("Failed to retrieve history by type", e);
+            throw new RuntimeException("Failed to retrieve history by type");
         }
     }
 
-    public Page<HistoryResponse> getHistoryByTypeAndIdentify(HistoryType historyType, String identify, Pageable pageable) {
-        return historyMapper.toResponsePage(historyRepository.findByHistoryTypeAndIdentify(historyType, identify, pageable));
+    /* ------------------------------------------------------------------
+     * 5. GET HISTORY BY TYPE + IDENTIFY
+     * ------------------------------------------------------------------ */
+    public Page<HistoryResponse> getHistoryByTypeAndIdentify(
+            HistoryType historyType, String identify, Pageable pageable) {
+
+        return historyMapper.toResponsePage(
+                historyRepository.findByHistoryTypeAndIdentify(historyType, identify, pageable)
+        );
     }
 
-    /**
-     * Convert entity to JSON string with BaseEntity fields filtered out
-     */
+    /* ------------------------------------------------------------------
+     * 6. CONVERT ENTITY TO JSON (FILTER BASEENTITY FIELDS)
+     * ------------------------------------------------------------------ */
     private <T> String convertEntityToJson(T entity) throws Exception {
         if (entity instanceof BaseEntity) {
+
             ObjectMapper filteredMapper = objectMapper.copy();
 
-            // Create a filter to exclude BaseEntity properties
-            SimpleBeanPropertyFilter baseEntityFilter = SimpleBeanPropertyFilter.serializeAllExcept(
-                    "id", "flagStatus", "isDeleted", "version",
-                    "createdBy", "createDate", "lastUpdatedBy", "lastUpdateDate"
-            );
+            SimpleBeanPropertyFilter baseEntityFilter =
+                    SimpleBeanPropertyFilter.serializeAllExcept(
+                            "id", "flagStatus", "isDeleted", "version",
+                            "createdBy", "createDate", "lastUpdatedBy", "lastUpdateDate"
+                    );
 
             FilterProvider filters = new SimpleFilterProvider()
                     .addFilter("baseEntityFilter", baseEntityFilter)
                     .setDefaultFilter(SimpleBeanPropertyFilter.serializeAll());
 
-            // Apply the filter provider to the mapper
             filteredMapper.setFilterProvider(filters);
-
-            // Add mix-in to apply the filter to BaseEntity classes
             filteredMapper.addMixIn(BaseEntity.class, BaseEntityFilterMixIn.class);
 
             return filteredMapper.writeValueAsString(entity);
-        } else {
-            return objectMapper.writeValueAsString(entity);
         }
+
+        return objectMapper.writeValueAsString(entity);
     }
 
-    /**
-     * Mix-in interface to apply property filter to BaseEntity
-     */
     @JsonFilter("baseEntityFilter")
-    private interface BaseEntityFilterMixIn {
+    private interface BaseEntityFilterMixIn {}
 
-    }
-
-    /**
-     * Create HistoryEntity from entity with error handling
-     */
-    private <T> HistoryEntity createHistoryEntity(T entity, ActionLog action, HistoryType historyType,String identify,String createdBy) {
+    /* ------------------------------------------------------------------
+     * 7. INTERNAL UTIL – Build HistoryEntity safely
+     * ------------------------------------------------------------------ */
+    private <T> HistoryEntity createHistoryEntity(T entity, ActionLog action, HistoryType historyType,
+                                                  String identify, String createdBy) {
         try {
             String jsonContent = convertEntityToJson(entity);
+
             return HistoryEntity.builder()
                     .action(action)
                     .historyType(historyType)
@@ -152,9 +188,9 @@ public class  HistoryService {
                     .createdBy(createdBy)
                     .identify(identify)
                     .build();
+
         } catch (Exception e) {
-            log.warn("Error converting entity to JSON for batch history: {}",
-                    entity.getClass().getSimpleName(), e);
+            log.warn("JSON conversion failed for entity: {}", entity.getClass().getSimpleName(), e);
             return null;
         }
     }
