@@ -38,7 +38,7 @@ public class DeviceController {
         return ResponseEntity.ok(deviceService.getById(id));
     }
 
-    @GetMapping("/all") // Đổi tên từ /my-devices
+    @GetMapping("/all")
     public ResponseEntity<Page<DeviceResponse>> getAllDevices(Pageable pageable) {
         return ResponseEntity.ok(deviceService.getAllDevices(pageable));
     }

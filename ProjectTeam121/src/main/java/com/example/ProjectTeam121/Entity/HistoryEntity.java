@@ -52,4 +52,7 @@ public class HistoryEntity extends BaseEntity {
     @Comment("Định danh của đối tượng liên quan đến lịch sử")
     @Size(max = 255) // Thêm giới hạn kích thước cho identify
     private String identify;
+
+    @Column(columnDefinition = "TEXT")
+    private String description;
 }

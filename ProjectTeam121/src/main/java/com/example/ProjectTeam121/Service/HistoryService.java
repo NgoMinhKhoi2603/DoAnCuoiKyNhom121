@@ -38,7 +38,7 @@ public class HistoryService {
      * 1. SAVE HISTORY (SINGLE)
      * ------------------------------------------------------------------ */
     @Async
-    public <T> void saveHistory(T entity, ActionLog action, HistoryType historyType, String identify, String createdBy) {
+    public <T> void saveHistory(T entity, ActionLog action, HistoryType historyType, String identify, String createdBy, String description) {
         try {
             String jsonContent = convertEntityToJson(entity);
 
@@ -48,6 +48,7 @@ public class HistoryService {
                     .content(jsonContent)
                     .createdBy(createdBy)
                     .identify(identify)
+                    .description(description)
                     .build();
 
             historyRepository.save(history);

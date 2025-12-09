@@ -59,7 +59,7 @@ public class SensorService {
         Sensor savedSensor = sensorRepository.save(sensor);
 
         historyService.saveHistory(savedSensor, ActionLog.CREATE, HistoryType.SENSOR_MANAGEMENT,
-                savedSensor.getId(), SecurityUtils.getCurrentUsername());
+                savedSensor.getId(), SecurityUtils.getCurrentUsername(), "Create a sensor");
 
         return sensorMapper.toResponse(savedSensor);
     }
@@ -82,7 +82,7 @@ public class SensorService {
         Sensor updatedSensor = sensorRepository.save(sensor);
 
         historyService.saveHistory(updatedSensor, ActionLog.UPDATE, HistoryType.SENSOR_MANAGEMENT,
-                updatedSensor.getId(), SecurityUtils.getCurrentUsername());
+                updatedSensor.getId(), SecurityUtils.getCurrentUsername(), "Update a sensor");
 
         return sensorMapper.toResponse(updatedSensor);
     }
@@ -93,7 +93,7 @@ public class SensorService {
         sensorRepository.delete(sensor);
 
         historyService.saveHistory(sensor, ActionLog.DELETE, HistoryType.SENSOR_MANAGEMENT,
-                sensor.getId(), SecurityUtils.getCurrentUsername());
+                sensor.getId(), SecurityUtils.getCurrentUsername(), "Delete a sensor");
     }
 
     @Transactional(readOnly = true)

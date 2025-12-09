@@ -98,7 +98,8 @@ public class AuthenticationService {
                 ActionLog.CREATE,
                 HistoryType.USER_MANAGEMENT,
                 savedUser.getEmail(),
-                savedUser.getEmail()
+                savedUser.getEmail(),
+                "New user register for an account."
         );
 
         return AuthenticationResponse.builder()
@@ -206,8 +207,8 @@ public class AuthenticationService {
         // Xóa token sau khi dùng
         tokenRepository.delete(token);
 
-        historyService.saveHistory(user, ActionLog.UPDATE, HistoryType.USER_MANAGEMENT,
-                "Reset Password via Email", user.getEmail());
+        historyService.saveHistory(user, ActionLog.UPDATE, HistoryType.USER_MANAGEMENT, user.getEmail(),
+                user.getEmail(), "Reset Password via Email");
 
         return "Đặt lại mật khẩu thành công. Bạn có thể đăng nhập ngay bây giờ.";
     }
@@ -233,7 +234,7 @@ public class AuthenticationService {
 
         // Log lại
         historyService.saveHistory(currentUser, ActionLog.UPDATE, HistoryType.USER_MANAGEMENT,
-                "User Changed Password", currentUser.getEmail());
+                currentUser.getEmail(), currentUser.getEmail(),"User Changed Password");
 
         return "Đổi mật khẩu thành công!";
     }

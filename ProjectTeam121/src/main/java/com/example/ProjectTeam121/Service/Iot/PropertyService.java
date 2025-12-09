@@ -39,7 +39,7 @@ public class PropertyService {
         Property savedProperty = propertyRepository.save(property);
 
         historyService.saveHistory(savedProperty, ActionLog.CREATE, HistoryType.PROPERTY_MANAGEMENT,
-                savedProperty.getId(), SecurityUtils.getCurrentUsername());
+                savedProperty.getId(), SecurityUtils.getCurrentUsername(), "Create a property");
 
         return propertyMapper.toResponse(savedProperty);
     }
@@ -51,7 +51,7 @@ public class PropertyService {
         Property updatedProperty = propertyRepository.save(property);
 
         historyService.saveHistory(updatedProperty, ActionLog.UPDATE, HistoryType.PROPERTY_MANAGEMENT,
-                updatedProperty.getId(), SecurityUtils.getCurrentUsername());
+                updatedProperty.getId(), SecurityUtils.getCurrentUsername(), "Update a property");
 
         return propertyMapper.toResponse(updatedProperty);
     }
@@ -63,7 +63,7 @@ public class PropertyService {
         propertyRepository.delete(property);
 
         historyService.saveHistory(property, ActionLog.DELETE, HistoryType.PROPERTY_MANAGEMENT,
-                property.getId(), SecurityUtils.getCurrentUsername());
+                property.getId(), SecurityUtils.getCurrentUsername(), "Delete a property");
     }
 
     @Transactional(readOnly = true)

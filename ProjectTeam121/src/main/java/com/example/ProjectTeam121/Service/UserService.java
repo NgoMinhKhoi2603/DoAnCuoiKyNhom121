@@ -70,7 +70,7 @@ public class UserService {
 
         // Ghi log lịch sử
         historyService.saveHistory(savedUser, ActionLog.UPDATE, HistoryType.USER_MANAGEMENT,
-                savedUser.getEmail(), SecurityUtils.getCurrentUsername());
+                savedUser.getEmail(), SecurityUtils.getCurrentUsername(), "Lock a user");
 
         return userMapper.toUserResponse(savedUser);
     }
@@ -83,7 +83,7 @@ public class UserService {
 
         // Ghi log lịch sử
         historyService.saveHistory(savedUser, ActionLog.UPDATE, HistoryType.USER_MANAGEMENT,
-                savedUser.getEmail(), SecurityUtils.getCurrentUsername());
+                savedUser.getEmail(), SecurityUtils.getCurrentUsername(), "Unlock a user");
 
         return userMapper.toUserResponse(savedUser);
     }
@@ -101,7 +101,7 @@ public class UserService {
 
         // Ghi log (Nội dung log sẽ là "Gán role [roleName] cho [username]")
         historyService.saveHistory(savedUser, ActionLog.UPDATE, HistoryType.USER_MANAGEMENT,
-                savedUser.getEmail(), SecurityUtils.getCurrentUsername());
+                savedUser.getEmail(), SecurityUtils.getCurrentUsername(), "Add role for account");
 
         return userMapper.toUserResponse(savedUser);
     }
@@ -124,7 +124,7 @@ public class UserService {
 
         // Ghi log (Nội dung log sẽ là "Xoá role [roleName] khỏi [username]")
         historyService.saveHistory(savedUser, ActionLog.UPDATE, HistoryType.USER_MANAGEMENT,
-                savedUser.getEmail(), SecurityUtils.getCurrentUsername());
+                savedUser.getEmail(), SecurityUtils.getCurrentUsername(), "Remove role from account");
 
         return userMapper.toUserResponse(savedUser);
     }
@@ -139,7 +139,7 @@ public class UserService {
         User savedUser = userRepository.save(user);
 
         historyService.saveHistory(savedUser, ActionLog.UPDATE, HistoryType.USER_MANAGEMENT,
-                savedUser.getEmail(), SecurityUtils.getCurrentUsername());
+                savedUser.getEmail(), SecurityUtils.getCurrentUsername(), "Lock commenting of a account");
 
         return userMapper.toUserResponse(savedUser);
     }
@@ -154,7 +154,7 @@ public class UserService {
         User savedUser = userRepository.save(user);
 
         historyService.saveHistory(savedUser, ActionLog.UPDATE, HistoryType.USER_MANAGEMENT,
-                savedUser.getEmail(), SecurityUtils.getCurrentUsername());
+                savedUser.getEmail(), SecurityUtils.getCurrentUsername(), "Unlock commenting of a account");
 
         return userMapper.toUserResponse(savedUser);
     }
@@ -175,7 +175,7 @@ public class UserService {
 
         // Ghi log lịch sử
         historyService.saveHistory(savedUser, ActionLog.UPDATE, HistoryType.USER_MANAGEMENT,
-                savedUser.getEmail(), currentUserEmail);
+                savedUser.getEmail(), currentUserEmail, "Update avatar");
     }
 
     /**
@@ -202,7 +202,7 @@ public class UserService {
         User savedUser = userRepository.save(user);
 
         historyService.saveHistory(savedUser, ActionLog.UPDATE, HistoryType.USER_MANAGEMENT,
-                "Change Password", currentUserEmail);
+                currentUserEmail, currentUserEmail, "Change Password");
     }
 
     /**
@@ -258,7 +258,7 @@ public class UserService {
 
         // 3. Ghi log
         historyService.saveHistory(user, ActionLog.UPDATE, HistoryType.USER_MANAGEMENT,
-                "User self-deactivated account", currentEmail);
+                currentEmail, currentEmail, "User self-deactivated account");
     }
 
     /**
@@ -287,7 +287,7 @@ public class UserService {
 
         // 4. Ghi log
         historyService.saveHistory(user, ActionLog.DELETE, HistoryType.USER_MANAGEMENT,
-                "User wiped all data", currentEmail);
+                currentEmail, currentEmail, "User wiped all data");
     }
 
     @Transactional
@@ -300,7 +300,7 @@ public class UserService {
         User savedUser = userRepository.save(user);
 
         historyService.saveHistory(savedUser, ActionLog.UPDATE, HistoryType.USER_MANAGEMENT,
-                savedUser.getEmail(), email);
+                savedUser.getEmail(), email, "Update information of account");
 
         return userMapper.toUserResponse(savedUser);
     }

@@ -39,7 +39,7 @@ public class DeviceTypeService {
         DeviceType savedDeviceType = deviceTypeRepository.save(deviceType);
 
         historyService.saveHistory(savedDeviceType, ActionLog.CREATE, HistoryType.DEVICE_TYPE_MANAGEMENT,
-                savedDeviceType.getId(), SecurityUtils.getCurrentUsername());
+                savedDeviceType.getId(), SecurityUtils.getCurrentUsername(), "Create a device type");
 
         return deviceTypeMapper.toResponse(savedDeviceType);
     }
@@ -51,7 +51,7 @@ public class DeviceTypeService {
         DeviceType updatedDeviceType = deviceTypeRepository.save(deviceType);
 
         historyService.saveHistory(updatedDeviceType, ActionLog.UPDATE, HistoryType.DEVICE_TYPE_MANAGEMENT,
-                updatedDeviceType.getId(), SecurityUtils.getCurrentUsername());
+                updatedDeviceType.getId(), SecurityUtils.getCurrentUsername(), "Update a device type");
 
         return deviceTypeMapper.toResponse(updatedDeviceType);
     }
@@ -63,7 +63,7 @@ public class DeviceTypeService {
         deviceTypeRepository.delete(deviceType);
 
         historyService.saveHistory(deviceType, ActionLog.DELETE, HistoryType.DEVICE_TYPE_MANAGEMENT,
-                deviceType.getId(), SecurityUtils.getCurrentUsername());
+                deviceType.getId(), SecurityUtils.getCurrentUsername(), "Delete a device type");
     }
 
     @Transactional(readOnly = true)

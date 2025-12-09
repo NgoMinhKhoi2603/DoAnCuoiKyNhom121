@@ -23,4 +23,6 @@ public class HistoryResponse extends BaseResponse{
     private JsonNode content;
 
     private String identify;
+
+    private String description;
 }

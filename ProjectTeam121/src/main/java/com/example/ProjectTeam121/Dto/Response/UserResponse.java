@@ -17,4 +17,6 @@ public class UserResponse {
     private boolean locked;
     private LocalDateTime createdAt;
     private Set<String> roles;
+    private boolean deactivated;
+    private boolean commentingLocked;
 }
