@@ -59,7 +59,7 @@ public class CommentService {
         Comment savedComment = commentRepository.save(comment);
 
         historyService.saveHistory(savedComment, ActionLog.CREATE, HistoryType.COMMENT_MANAGEMENT,
-                savedComment.getId(), currentEmail, "User creat a comment");
+                currentEmail, currentEmail, "User creat a comment");
 
         return commentMapper.toResponse(savedComment);
     }
@@ -83,7 +83,7 @@ public class CommentService {
         Comment updated = commentRepository.save(comment);
 
         historyService.saveHistory(updated, ActionLog.UPDATE, HistoryType.COMMENT_MANAGEMENT,
-                updated.getId(), SecurityUtils.getCurrentUsername(), "Hide a comment");
+                updated.getCreatedBy(), SecurityUtils.getCurrentUsername(), "Hide a comment");
 
         return commentMapper.toResponse(updated);
     }
@@ -95,7 +95,7 @@ public class CommentService {
         Comment updated = commentRepository.save(comment);
 
         historyService.saveHistory(updated, ActionLog.UPDATE, HistoryType.COMMENT_MANAGEMENT,
-                updated.getId(), SecurityUtils.getCurrentUsername(), "Unhide a comment");
+                updated.getCreatedBy(), SecurityUtils.getCurrentUsername(), "Unhide a comment");
 
         return commentMapper.toResponse(updated);
     }
@@ -106,7 +106,7 @@ public class CommentService {
         commentRepository.delete(comment);
 
         historyService.saveHistory(comment, ActionLog.DELETE, HistoryType.COMMENT_MANAGEMENT,
-                comment.getId(), SecurityUtils.getCurrentUsername(), "Delete a comment");
+                comment.getCreatedBy(), SecurityUtils.getCurrentUsername(), "Delete a comment");
     }
 
     // ======================================================
