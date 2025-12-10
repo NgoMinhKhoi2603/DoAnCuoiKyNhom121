@@ -89,7 +89,7 @@ public class AuthenticationService {
         tokenRepository.save(verificationToken);
 
         // THÊM: Gửi email (Giả sử server chạy localhost:8080)
-        String activationLink = "http://localhost:8080/api/v1/auth/activate?token=" + verificationToken.getToken();
+        String activationLink = backendUrl + "/api/v1/auth/activate?token=" + verificationToken.getToken();
         emailService.sendActivationEmail(savedUser.getEmail(), "Kích hoạt tài khoản ProjectTeam121", activationLink);
 
         // Ghi log
