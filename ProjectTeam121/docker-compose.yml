@@ -1,0 +1,65 @@
+version: '3.8'
+
+services:
+  # 1. Service Database MySQL
+  mysql-db:
+    image: mysql:8.0
+    container_name: team121-mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root  # Mật khẩu root (giống application.properties)
+      MYSQL_DATABASE: TestTinasoft # Tên DB (giống application.properties)
+      MYSQL_PASSWORD: root
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    command: --default-authentication-plugin=mysql_native_password
+
+  # 2. Service MinIO (Lưu trữ file)
+  minio:
+    image: minio/minio:latest
+    container_name: team121-minio
+    restart: always
+    ports:
+      - "9000:9000" # API Port
+      - "9001:9001" # Console Port
+    environment:
+      MINIO_ROOT_USER: admin        # (giống minio.access-key)
+      MINIO_ROOT_PASSWORD: 02062003 # (giống minio.secret-key)
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"
+
+  # 3. Service Backend (Spring Boot App)
+  backend:
+    # Thay yourusername bằng tài khoản docker hub của bạn
+    image: yourusername/project-team121:latest
+    container_name: team121-backend
+    restart: always
+    depends_on:
+      - mysql-db
+      - minio
+    ports:
+      - "8080:8080"
+    environment:
+      # Cấu hình lại kết nối DB để trỏ vào service 'mysql-db' thay vì localhost
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql-db:3306/TestTinasoft?allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root
+
+      # Cấu hình lại MinIO để trỏ vào service 'minio' thay vì localhost
+      MINIO_URL: http://minio:9000
+      MINIO_ACCESS_KEY: admin
+      MINIO_SECRET_KEY: 02062003
+      MINIO_BUCKET_NAME: test-bucket
+
+      # Các cấu hình khác giữ nguyên hoặc override nếu cần
+      APPLICATION_FRONTEND_URL: http://localhost:3000
+    volumes:
+      # Mount thư mục uploads ra ngoài để không mất ảnh khi xóa container
+      - ./uploads_data:/app/uploads
+
+volumes:
+  mysql_data:
+  minio_data:

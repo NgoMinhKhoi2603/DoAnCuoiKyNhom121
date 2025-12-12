@@ -11,14 +11,19 @@ import org.mapstruct.MappingTarget;
 public interface DeviceMapper {
 
     @Mapping(target = "deviceType", ignore = true)
+    @Mapping(target = "primaryProperty", ignore = true)
     Device toEntity(DeviceRequest request);
 
     @Mapping(source = "deviceType.id", target = "deviceTypeId")
     @Mapping(source = "deviceType.name", target = "typeName")
+    // MAPPING MỚI
+    @Mapping(source = "primaryProperty.id", target = "primaryPropertyId")
+    @Mapping(source = "primaryProperty.name", target = "primaryPropertyName")
     DeviceResponse toResponse(Device entity);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "deviceType", ignore = true)
     @Mapping(target = "sensors", ignore = true)
+    @Mapping(target = "primaryProperty", ignore = true)
     void updateEntityFromRequest(DeviceRequest request, @MappingTarget Device entity);
 }

@@ -39,4 +39,6 @@ public class DeviceRequest {
     private String description;
 
     private String deviceTypeId;
+
+    private String primaryPropertyId;
 }

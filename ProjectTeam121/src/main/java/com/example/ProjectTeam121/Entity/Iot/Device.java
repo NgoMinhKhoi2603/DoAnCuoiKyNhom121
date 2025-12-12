@@ -20,7 +20,7 @@ import java.util.Set;
 @NoArgsConstructor
 @Entity
 @Table(name = "DEVICES", indexes = {
-        @Index(name = "idx_device_type", columnList = "type_id")
+        @Index(name = "idx_device_type", columnList = "device_type_id")
 })
 public class Device extends BaseEntity {
 
@@ -63,6 +63,10 @@ public class Device extends BaseEntity {
 
     @Column(columnDefinition = "TEXT")
     private String description;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "primary_property_id")
+    private Property primaryProperty;
     // --------------------------
 
     // Quan hệ: Thiết bị này thuộc Loại nào

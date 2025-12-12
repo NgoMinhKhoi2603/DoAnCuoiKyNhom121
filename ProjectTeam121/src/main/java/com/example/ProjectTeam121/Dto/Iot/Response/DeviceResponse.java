@@ -24,4 +24,6 @@ public class DeviceResponse extends BaseIotResponse {
     private String description;
     private String deviceTypeId;
     private String typeName;
+    private String primaryPropertyId;
+    private String primaryPropertyName;
 }
