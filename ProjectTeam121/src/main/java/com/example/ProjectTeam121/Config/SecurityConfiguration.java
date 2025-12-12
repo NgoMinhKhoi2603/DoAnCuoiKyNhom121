@@ -44,6 +44,13 @@ public CorsConfigurationSource corsConfigurationSource() {
 
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(
+                                "/v3/api-docs/**",
+                                "/v3/api-docs/swagger-config",
+                                "/swagger-ui/**",
+                                "/swagger-ui.html"
+                        ).permitAll()
+
                         .requestMatchers("/api/v1/auth/**").permitAll()
                         .requestMatchers("/api/v1/admin/**").hasAuthority("ROLE_ADMIN")
 
@@ -52,6 +59,7 @@ public CorsConfigurationSource corsConfigurationSource() {
                         .requestMatchers(HttpMethod.POST, "/api/v1/iot/**").hasAuthority("ROLE_ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/api/v1/iot/**").hasAuthority("ROLE_ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/api/v1/iot/**").hasAuthority("ROLE_ADMIN")
+                        .requestMatchers("/api/v1/chat", "/api/v1/chat/**").permitAll()
 
                         // Bất kỳ ai đã đăng nhập (ADMIN hoặc USER) đều có quyền GET (Xem)
                         .requestMatchers(HttpMethod.GET, "/api/v1/iot/**").authenticated()

@@ -90,13 +90,19 @@ public class GlobalExceptionHandler {
             Exception ex,
             HttpServletRequest request
     ) {
+        String path = request != null ? request.getRequestURI() : "";
+
+        if (path.startsWith("/v3/api-docs")
+                || path.startsWith("/swagger-ui")) {
+            throw new RuntimeException(ex);
+        }
         log.error("Unhandled exception: ", ex);
         return ResponseUtils.errorRaw(
                 HttpStatus.INTERNAL_SERVER_ERROR,
                 "Internal server error",
                 9999,
                 "project-team121.9999",
-                request != null ? request.getRequestURI() : null
+                path
         );
     }
 
