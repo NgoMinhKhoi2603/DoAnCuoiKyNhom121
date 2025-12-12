@@ -19,40 +19,38 @@ public class AIService {
 
     private final RestClient restClient;
     private final JdbcTemplate jdbc;
+    private final IoTLakeService lake;
+
+    /* =========================================================
+                           1) DATE HANDLING
+       ========================================================= */
+
+    public boolean isVietnameseDateQuestion(String msg) {
+        msg = msg.toLowerCase();
+        return msg.contains("hôm nay")
+                || msg.contains("ngày mấy")
+                || msg.contains("ngày bao nhiêu")
+                || msg.contains("ngày tháng năm");
+    }
+
+    public String getVietnamDate() {
+        LocalDate now = LocalDate.now();
+        return "Hôm nay là ngày " + now.getDayOfMonth()
+                + " tháng " + now.getMonthValue()
+                + " năm " + now.getYear() + ".";
+    }
+
+    /* =========================================================
+                         2) SQL DETECTION + GENERATION
+       ========================================================= */
 
     public boolean isSQLQuestion(String msg) {
         msg = msg.toLowerCase();
-
-        boolean askData =
-                msg.contains("bao nhiêu") ||
-                        msg.contains("liệt kê") ||
-                        msg.contains("danh sách") ||
-                        msg.contains("đếm") ||
-                        msg.contains("user") ||
-                        msg.contains("thiết bị") ||
-                        msg.contains("bản ghi");
-
-        boolean hasDate =
-                msg.contains("ngày") ||
-                        msg.contains("tháng") ||
-                        msg.contains("năm") ||
-                        msg.matches(".*\\d{4}-\\d{2}-\\d{2}.*"); // yyyy-MM-dd
-
-        return askData || hasDate;
-    }
-
-
-    public boolean isDateOnlyQuestion(String msg) {
-        msg = msg.toLowerCase();
-        return msg.contains("hôm nay") ||
-                msg.contains("nay ngày") ||
-                msg.contains("ngày bao nhiêu") ||
-                msg.contains("thứ mấy");
-    }
-
-    public String answerToday() {
-        LocalDate now = LocalDate.now();
-        return "Hôm nay là " + now.toString();
+        return msg.contains("bao nhiêu")
+                || msg.contains("đếm")
+                || msg.contains("liệt kê")
+                || msg.contains("danh sách")
+                || msg.matches(".*\\d{4}-\\d{2}-\\d{2}.*");
     }
 
     public String generateSQLOnly(String question) {
@@ -60,166 +58,158 @@ public class AIService {
         Map<String, Object> body = new HashMap<>();
         body.put("model", model);
 
-        List<Map<String, String>> messages = new ArrayList<>();
-
-        messages.add(Map.of(
-                "role", "system",
-                "content",
-                """
-                Bạn là trợ lý AI của PTIT IoT Platform.
-
-                Nhiệm vụ:
-                - Chuyển câu hỏi thành SQL MySQL hợp lệ duy nhất.
-                - Không giải thích, không trả về câu nào khác ngoài SQL.
-
-                Quy tắc xử lý thời gian:
-                - "hôm nay", "nay" → CURDATE()
-                - "tháng này" → MONTH(created_at) = MONTH(CURDATE())
-                - "năm nay" → YEAR(created_at) = YEAR(CURDATE())
-                - "ngày 2024-12-01" → DATE(created_at) = '2024-12-01'
-
-                Khi hỏi user → dùng bảng users.
-                Khi hỏi thiết bị → dùng bảng devices.
-                """
+        body.put("messages", List.of(
+                Map.of("role", "system",
+                        "content", """
+                        Bạn là AI sinh SQL MySQL.
+                        Trả về DUY NHẤT 1 câu SQL hợp lệ.
+                        Không giải thích.
+                        Không mô tả.
+                        Không bao gồm text khác.
+                        """),
+                Map.of("role", "user", "content", question)
         ));
-
-        messages.add(Map.of(
-                "role", "user",
-                "content",
-                "Hãy viết DUY NHẤT câu SQL MySQL. Câu hỏi: " + question
-        ));
-
-        body.put("messages", messages);
 
         try {
-            String response = restClient.post()
+            String resp = restClient.post()
                     .uri("https://api.groq.com/openai/v1/chat/completions")
                     .body(body)
                     .retrieve()
                     .body(String.class);
 
-            String sql = extractContent(response).trim();
-
-            // fix lỗi model dùng bảng "user"
-            sql = sql.replaceAll("\\buser\\b", "users");
-
-            return sql;
-
+            return extract(resp).trim();
         } catch (Exception e) {
             return null;
         }
+    }
+
+    public boolean isValidSQL(String sql) {
+        if (sql == null) return false;
+
+        String s = sql.trim().toLowerCase();
+
+        return s.startsWith("select")        // chỉ SELECT
+                && !s.contains(";")         // không cho nhiều câu
+                && !s.contains("--")        // chống comment
+                && !s.contains("drop")
+                && !s.contains("delete")
+                && !s.contains("update")
+                && !s.contains("insert");
     }
 
     public List<Map<String, Object>> runSQL(String sql) {
         return jdbc.queryForList(sql);
     }
 
-    public String explainResultToUser(String question, Object result) {
+    /* =========================================================
+                         3) IoT DATA LAKE ANALYSIS
+       ========================================================= */
+
+    public String analyzeIoT(String question) {
+
+        String raw = lake.loadLatestRawData();
+
+        if (raw == null) {
+            return "Không tìm thấy dữ liệu nào trong Data Lake của bạn.";
+        }
 
         Map<String, Object> body = new HashMap<>();
         body.put("model", model);
-
-        String content =
-                """
-                Hãy trả lời người dùng bằng tiếng Việt.
-                Yêu cầu:
-                - Không nhắc tới SQL hoặc database.
-                - Trình bày rõ ràng, xuống dòng từng ý.
-                - Ngắn gọn, dễ đọc, giống phong cách ChatGPT.
-
-                Câu hỏi của người dùng:
-                """ + question +
-                        """
-        
-                        Đây là dữ liệu cần diễn giải:
-                        """ + result;
-
-        List<Map<String, String>> msgs = new ArrayList<>();
-        msgs.add(Map.of("role", "user", "content", content));
-
-        body.put("messages", msgs);
+        body.put("messages", List.of(
+                Map.of("role", "system",
+                        "content", "Bạn là AI phân tích dữ liệu IoT."),
+                Map.of("role", "user",
+                        "content", "Dữ liệu cảm biến:\n" + raw + "\n\nCâu hỏi: " + question)
+        ));
 
         try {
-            String response = restClient.post()
+            String resp = restClient.post()
                     .uri("https://api.groq.com/openai/v1/chat/completions")
                     .body(body)
                     .retrieve()
                     .body(String.class);
 
-            return extractContent(response);
+            return extract(resp);
 
         } catch (Exception e) {
-            return "Không thể diễn giải kết quả.";
+            return "Không thể phân tích dữ liệu IoT.";
         }
     }
+
+    /* =========================================================
+                        4) GENERAL CHAT HANDLING
+       ========================================================= */
 
     public String generalChat(String message) {
 
         Map<String, Object> body = new HashMap<>();
         body.put("model", model);
-
-        List<Map<String, String>> msgs = new ArrayList<>();
-
-        msgs.add(Map.of(
-                "role", "system",
-                "content",
-                """
-                Bạn là trợ lý AI của PTIT IoT Platform.
-                Khi trả lời:
-                - Trình bày rõ ràng, có xuống dòng.
-                - Không dùng Markdown phức tạp.
-                - Giải thích từng phần tách biệt, dễ đọc.
-                """
+        body.put("messages", List.of(
+                Map.of("role", "system",
+                        "content",
+                        "Bạn là trợ lý AI. Trả lời rõ ràng, tự nhiên như ChatGPT."),
+                Map.of("role", "user", "content", message)
         ));
 
-        msgs.add(Map.of("role", "user", "content", message));
-
-        body.put("messages", msgs);
-
         try {
-            String response = restClient.post()
+            String resp = restClient.post()
                     .uri("https://api.groq.com/openai/v1/chat/completions")
                     .body(body)
                     .retrieve()
                     .body(String.class);
 
-            return extractContent(response);
+            return extract(resp);
 
         } catch (Exception e) {
             return "AI không phản hồi.";
         }
     }
 
+    /* =========================================================
+                        5) NATURAL LANGUAGE RESPONSE
+       ========================================================= */
 
-    private String extractContent(String json) {
+    public String explainResultToUser(String question, Object result) {
+
+        Map<String, Object> body = new HashMap<>();
+        body.put("model", model);
+
+        String prompt = """
+                Hãy trả lời người dùng bằng tiếng Việt.
+                Không nhắc đến SQL hoặc cơ sở dữ liệu.
+                Trình bày tự nhiên như ChatGPT.
+                Dữ liệu truy vấn:
+                """ + result + "\n\nCâu hỏi: " + question;
+
+        body.put("messages", List.of(
+                Map.of("role", "user", "content", prompt)
+        ));
+
         try {
-            var root = new ObjectMapper().readTree(json);
-            return root.get("choices").get(0).get("message").get("content").asText();
+            String resp = restClient.post()
+                    .uri("https://api.groq.com/openai/v1/chat/completions")
+                    .body(body)
+                    .retrieve()
+                    .body(String.class);
+
+            return extract(resp);
+
         } catch (Exception e) {
-            return "Không thể đọc phản hồi AI.";
+            return "Không thể diễn giải kết quả.";
         }
     }
 
-    public boolean isVietnameseDateQuestion(String msg) {
-        msg = msg.toLowerCase();
+    /* =========================================================
+                             6) JSON EXTRACTOR
+       ========================================================= */
 
-        return msg.contains("hôm nay") ||
-                msg.contains("ngày mấy") ||
-                msg.contains("ngày tháng năm") ||
-                msg.contains("nay ngày") ||
-                msg.contains("bây giờ là ngày") ||
-                msg.contains("hnay") ||
-                msg.contains("h.nay");
+    private String extract(String json) {
+        try {
+            var root = new ObjectMapper().readTree(json);
+            return root.get("choices").get(0)
+                    .get("message").get("content").asText();
+        } catch (Exception e) {
+            return "Không đọc được phản hồi AI.";
+        }
     }
-
-    public String getVietnamDate() {
-        LocalDate now = LocalDate.now();
-        int day = now.getDayOfMonth();
-        int month = now.getMonthValue();
-        int year = now.getYear();
-
-        return "Hôm nay là ngày " + day + " tháng " + month + " năm " + year + ".";
-    }
-
-
 }
