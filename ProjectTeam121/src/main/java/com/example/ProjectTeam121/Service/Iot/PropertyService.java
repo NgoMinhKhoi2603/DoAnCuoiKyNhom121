@@ -32,8 +32,8 @@ public class PropertyService {
 
     @Transactional
     public PropertyResponse create(PropertyRequest request) {
-        if (propertyRepository.existsByName(request.getName())) {
-            throw new ValidationException(ErrorCode.PROPERTY_NAME_EXISTS, "Property name already exists");
+        if (propertyRepository.existsByNameAndUnit(request.getName(), request.getUnit())) {
+            throw new ValidationException(ErrorCode.PROPERTY_NAME_AND_UNIT_EXISTS, "Cặp thuộc tính với tên và đơn vị này đã tồn tại");
         }
         Property property = propertyMapper.toEntity(request);
         Property savedProperty = propertyRepository.save(property);

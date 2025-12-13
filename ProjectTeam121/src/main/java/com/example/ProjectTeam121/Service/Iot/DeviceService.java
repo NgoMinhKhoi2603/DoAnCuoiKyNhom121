@@ -23,6 +23,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -55,9 +56,10 @@ public class DeviceService {
         Device device = deviceMapper.toEntity(request);
         device.setDeviceType(deviceType);
 
-        // 1. Xử lý Sensors và lưu Threshold
+        // 1. Xử lý Sensors (Dùng List thay vì Set)
         if (request.getPropertyIds() != null && !request.getPropertyIds().isEmpty()) {
-            Set<Sensor> sensors = new HashSet<>();
+            // SỬA: Dùng ArrayList
+            List<Sensor> sensors = new ArrayList<>();
             List<Property> properties = propertyRepository.findAllById(request.getPropertyIds());
 
             for (Property prop : properties) {
@@ -68,7 +70,7 @@ public class DeviceService {
                         .status(SensorStatus.ACTIVE)
                         .isActuator(false);
 
-                // NẾU ĐÂY LÀ PRIMARY PROPERTY -> LƯU THRESHOLD
+                // Check Threshold cho Primary Property
                 if (prop.getId().equals(request.getPrimaryPropertyId())) {
                     sensorBuilder.thresholdWarning(request.getThresholdWarning());
                     sensorBuilder.thresholdCritical(request.getThresholdCritical());
@@ -102,24 +104,27 @@ public class DeviceService {
         Device device = findDeviceById(id);
         deviceMapper.updateEntityFromRequest(request, device);
 
-        // Update Device Type
         if (!device.getDeviceType().getId().equals(request.getDeviceTypeId())) {
             DeviceType deviceType = deviceTypeRepository.findById(request.getDeviceTypeId())
                     .orElseThrow(() -> new ValidationException(ErrorCode.DEVICE_TYPE_NOT_FOUND, "DeviceType not found"));
             device.setDeviceType(deviceType);
         }
 
-        // 1. Đồng bộ danh sách Sensors
+        // 1. Đồng bộ Sensors (Logic cho List)
         if (request.getPropertyIds() != null) {
-            Set<String> newPropIds = new HashSet<>(request.getPropertyIds());
+            // Đảm bảo list sensors không null
+            if (device.getSensors() == null) {
+                device.setSensors(new ArrayList<>());
+            }
 
-            // Xóa sensor cũ không còn chọn
+            List<String> newPropIds = request.getPropertyIds();
+
+            // Xóa sensor cũ không còn trong list mới
             device.getSensors().removeIf(sensor -> !newPropIds.contains(sensor.getProperty().getId()));
 
-            // Lấy danh sách ID các property hiện có
-            Set<String> existingPropIds = device.getSensors().stream()
+            List<String> existingPropIds = device.getSensors().stream()
                     .map(s -> s.getProperty().getId())
-                    .collect(Collectors.toSet());
+                    .collect(Collectors.toList());
 
             // Thêm sensor mới
             for (String propId : newPropIds) {
@@ -139,20 +144,15 @@ public class DeviceService {
             }
         }
 
-        // 2. CẬP NHẬT THRESHOLD CHO CÁC SENSOR
-        // Duyệt qua tất cả sensor hiện tại để cập nhật threshold cho đúng cái Primary
         if (device.getSensors() != null) {
             for (Sensor sensor : device.getSensors()) {
-                // Nếu sensor này ứng với Primary Property -> Update Threshold
                 if (sensor.getProperty().getId().equals(request.getPrimaryPropertyId())) {
                     sensor.setThresholdWarning(request.getThresholdWarning());
                     sensor.setThresholdCritical(request.getThresholdCritical());
                 }
-                // (Tùy chọn: Nếu muốn xóa threshold của sensor cũ khi đổi primary, có thể thêm else set null)
             }
         }
 
-        // 3. Update Primary Property Reference
         if (request.getPrimaryPropertyId() != null && !request.getPrimaryPropertyId().isEmpty()) {
             if (request.getPropertyIds() != null && !request.getPropertyIds().contains(request.getPrimaryPropertyId())) {
                 throw new ValidationException(ErrorCode.INVALID_REQUEST, "Thuộc tính chính phải thuộc danh sách thuộc tính đã chọn");

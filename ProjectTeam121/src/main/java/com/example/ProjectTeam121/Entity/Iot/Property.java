@@ -19,7 +19,9 @@ import java.util.Set;
 @SuperBuilder
 @NoArgsConstructor
 @Entity
-@Table(name = "PROPERTIES")
+@Table(name = "PROPERTIES", uniqueConstraints = {
+        @UniqueConstraint(name = "uk_property_name_unit", columnNames = {"name", "unit"})
+})
 public class Property extends BaseEntity {
 
     @NotBlank

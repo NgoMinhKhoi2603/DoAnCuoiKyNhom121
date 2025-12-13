@@ -39,7 +39,7 @@ public enum ErrorCode {
     DEVICE_TYPE_NAME_EXISTS(1032, "error.device_type_name_exists", HttpStatus.BAD_REQUEST),
     // Lỗi cho Property
     PROPERTY_NOT_FOUND(1033, "error.property_not_found", HttpStatus.NOT_FOUND),
-    PROPERTY_NAME_EXISTS(1034, "error.property_name_exists", HttpStatus.BAD_REQUEST),
+    PROPERTY_NAME_AND_UNIT_EXISTS(1034, "error.property_name_and_unit_exists", HttpStatus.BAD_REQUEST),
     // Lỗi cho Device
     DEVICE_NOT_FOUND(1035, "error.device_not_found", HttpStatus.NOT_FOUND),
     DEVICE_IDENTIFIER_EXISTS(1036, "error.device_identifier_exists", HttpStatus.BAD_REQUEST),

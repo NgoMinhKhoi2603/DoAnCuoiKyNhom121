@@ -2,8 +2,8 @@ package com.example.ProjectTeam121.Entity.Iot;
 
 import com.example.ProjectTeam121.Dto.Enum.DeviceStatus;
 import com.example.ProjectTeam121.Entity.BaseEntity;
-import com.fasterxml.jackson.annotation.JsonIgnore; // Import này
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties; // Import này
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -14,7 +14,8 @@ import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 
 import java.time.LocalDateTime;
-import java.util.Set;
+import java.util.ArrayList; // Import ArrayList
+import java.util.List;      // Import List
 
 @Getter
 @Setter
@@ -66,9 +67,6 @@ public class Device extends BaseEntity {
     @Column(columnDefinition = "TEXT")
     private String description;
 
-    // --- SỬA Ở ĐÂY ---
-
-    // Bỏ qua các trường proxy của Hibernate để tránh lỗi "No serializer found"
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "primary_property_id")
     @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
@@ -76,11 +74,10 @@ public class Device extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "device_type_id")
-    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "devices"}) // Bỏ qua cả list devices ngược lại để gọn JSON
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "devices"})
     private DeviceType deviceType;
 
-    // Ngắt vòng lặp và Lazy Loading khi lưu log
     @OneToMany(mappedBy = "device", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnore
-    private Set<Sensor> sensors;
+    private List<Sensor> sensors = new ArrayList<>();
 }
