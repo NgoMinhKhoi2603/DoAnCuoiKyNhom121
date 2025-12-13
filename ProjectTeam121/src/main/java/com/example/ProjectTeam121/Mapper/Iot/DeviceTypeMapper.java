@@ -4,17 +4,16 @@ import com.example.ProjectTeam121.Dto.Iot.Request.DeviceTypeRequest;
 import com.example.ProjectTeam121.Dto.Iot.Response.DeviceTypeResponse;
 import com.example.ProjectTeam121.Entity.Iot.DeviceType;
 import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
+import org.mapstruct.NullValuePropertyMappingStrategy;
 
-@Mapper(componentModel = "spring")
+// Quan trọng: componentModel = "spring" để Spring quản lý bean này
+@Mapper(componentModel = "spring", nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
 public interface DeviceTypeMapper {
 
     DeviceType toEntity(DeviceTypeRequest request);
 
     DeviceTypeResponse toResponse(DeviceType entity);
 
-    @Mapping(target = "id", ignore = true)
-    @Mapping(target = "devices", ignore = true)
     void updateEntityFromRequest(DeviceTypeRequest request, @MappingTarget DeviceType entity);
 }

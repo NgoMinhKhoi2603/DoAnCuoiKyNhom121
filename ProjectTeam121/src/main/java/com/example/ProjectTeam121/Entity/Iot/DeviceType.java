@@ -1,6 +1,7 @@
 package com.example.ProjectTeam121.Entity.Iot;
 
 import com.example.ProjectTeam121.Entity.BaseEntity;
+import com.fasterxml.jackson.annotation.JsonIgnore; // <--- Thêm import này
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.OneToMany;
@@ -35,9 +36,10 @@ public class DeviceType extends BaseEntity {
 
     @Size(max = 50)
     @Column(length = 50)
-    private String category; // "Gateway", "Sensor Node", "Actuator"
+    private String category;
 
     // Quan hệ: Một loại thiết bị có nhiều thiết bị
     @OneToMany(mappedBy = "deviceType")
+    @JsonIgnore //Bỏ qua field này khi lưu log History
     private Set<Device> devices;
 }

@@ -2,6 +2,8 @@ package com.example.ProjectTeam121.Entity.Iot;
 
 import com.example.ProjectTeam121.Dto.Enum.SensorStatus;
 import com.example.ProjectTeam121.Entity.BaseEntity;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -26,7 +28,7 @@ public class Sensor extends BaseEntity {
 
     @NotBlank
     @Size(max = 255)
-    private String name; // 'Cảm biến khói MQ-2 phòng khách'
+    private String name;
 
     @NotNull
     @Enumerated(EnumType.STRING)
@@ -34,24 +36,24 @@ public class Sensor extends BaseEntity {
     private SensorStatus status = SensorStatus.ACTIVE;
 
     @NotNull
-    private boolean isActuator = false; // Là cảm biến (false) hay thiết bị điều khiển (true)?
+    private boolean isActuator = false;
 
-    @Column(precision = 10, scale = 2)
+    @Column(precision = 10, scale = 2, nullable = true)
     private BigDecimal thresholdWarning;
 
-    @Column(precision = 10, scale = 2)
+    @Column(precision = 10, scale = 2, nullable = true)
     private BigDecimal thresholdCritical;
 
     @Size(max = 255)
     private String latestValue;
 
-    // Quan hệ: Cảm biến này thuộc Thiết bị nào
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "device_id", nullable = false)
+    @JsonIgnore
     private Device device;
 
-    // Quan hệ: Cảm biến này đo Thuộc tính nào
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "property_id", nullable = false)
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "sensors"})
     private Property property;
 }

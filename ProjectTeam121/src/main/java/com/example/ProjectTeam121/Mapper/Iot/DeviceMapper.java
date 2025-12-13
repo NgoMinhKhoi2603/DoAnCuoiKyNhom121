@@ -7,18 +7,20 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 
-@Mapper(componentModel = "spring")
+// Thêm uses = {SensorMapper.class} để nó biết cách map list sensors
+@Mapper(componentModel = "spring", uses = {SensorMapper.class})
 public interface DeviceMapper {
 
     @Mapping(target = "deviceType", ignore = true)
     @Mapping(target = "primaryProperty", ignore = true)
+    @Mapping(target = "sensors", ignore = true) // Ignored khi tạo mới từ request
     Device toEntity(DeviceRequest request);
 
     @Mapping(source = "deviceType.id", target = "deviceTypeId")
     @Mapping(source = "deviceType.name", target = "typeName")
-    // MAPPING MỚI
     @Mapping(source = "primaryProperty.id", target = "primaryPropertyId")
     @Mapping(source = "primaryProperty.name", target = "primaryPropertyName")
+    @Mapping(source = "sensors", target = "sensors") // Map danh sách sensors
     DeviceResponse toResponse(Device entity);
 
     @Mapping(target = "id", ignore = true)

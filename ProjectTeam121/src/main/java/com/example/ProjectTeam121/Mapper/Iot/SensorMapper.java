@@ -14,14 +14,14 @@ public interface SensorMapper {
     @Mapping(target = "property", ignore = true)
     Sensor toEntity(SensorRequest request);
 
-    @Mapping(source = "device.id", target = "deviceId")
+    // Map thông tin property sang response phẳng
     @Mapping(source = "property.id", target = "propertyId")
     @Mapping(source = "property.name", target = "propertyName")
+    @Mapping(source = "property.unit", target = "propertyUnit")
     SensorResponse toResponse(Sensor entity);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "device", ignore = true)
     @Mapping(target = "property", ignore = true)
-    @Mapping(target = "latestValue", ignore = true)
     void updateEntityFromRequest(SensorRequest request, @MappingTarget Sensor entity);
 }

@@ -6,6 +6,7 @@ import lombok.EqualsAndHashCode;
 import lombok.experimental.SuperBuilder;
 
 import java.time.LocalDateTime;
+import java.util.List; // Import List
 
 @Data
 @SuperBuilder
@@ -22,8 +23,12 @@ public class DeviceResponse extends BaseIotResponse {
     private String district;
     private String ward;
     private String description;
+
     private String deviceTypeId;
     private String typeName;
+
     private String primaryPropertyId;
     private String primaryPropertyName;
+
+    private List<SensorResponse> sensors;
 }

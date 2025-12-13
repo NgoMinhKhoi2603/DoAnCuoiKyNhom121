@@ -2,6 +2,7 @@ package com.example.ProjectTeam121.Entity.Iot;
 
 import com.example.ProjectTeam121.Dto.Enum.PropertyDataType;
 import com.example.ProjectTeam121.Entity.BaseEntity;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -24,11 +25,11 @@ public class Property extends BaseEntity {
     @NotBlank
     @Size(max = 100)
     @Column(nullable = false, unique = true, length = 100)
-    private String name; // 'Khói', 'Ánh sáng', 'PM2.5'
+    private String name; // Ví dụ: 'Khói', 'Ánh sáng', 'Nhiệt độ'
 
     @Size(max = 20)
     @Column(length = 20)
-    private String unit; // 'ppm', 'lux', 'µg/m³'
+    private String unit; // Ví dụ: 'ppm', 'lux', '°C'
 
     @NotNull
     @Enumerated(EnumType.STRING)
@@ -37,5 +38,6 @@ public class Property extends BaseEntity {
 
     // Quan hệ: Một thuộc tính có thể được đo bởi nhiều cảm biến
     @OneToMany(mappedBy = "property")
+    @JsonIgnore //Thêm dòng này để tránh lỗi Lazy Loading
     private Set<Sensor> sensors;
 }

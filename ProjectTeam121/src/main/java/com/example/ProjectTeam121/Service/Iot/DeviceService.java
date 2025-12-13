@@ -2,11 +2,13 @@ package com.example.ProjectTeam121.Service.Iot;
 
 import com.example.ProjectTeam121.Dto.Enum.ActionLog;
 import com.example.ProjectTeam121.Dto.Enum.HistoryType;
+import com.example.ProjectTeam121.Dto.Enum.SensorStatus;
 import com.example.ProjectTeam121.Dto.Iot.Request.DeviceRequest;
 import com.example.ProjectTeam121.Dto.Iot.Response.DeviceResponse;
 import com.example.ProjectTeam121.Entity.Iot.Device;
 import com.example.ProjectTeam121.Entity.Iot.DeviceType;
 import com.example.ProjectTeam121.Entity.Iot.Property;
+import com.example.ProjectTeam121.Entity.Iot.Sensor;
 import com.example.ProjectTeam121.Mapper.Iot.DeviceMapper;
 import com.example.ProjectTeam121.Repository.Iot.DeviceRepository;
 import com.example.ProjectTeam121.Repository.Iot.DeviceTypeRepository;
@@ -21,6 +23,11 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 @Service
 @RequiredArgsConstructor
 public class DeviceService {
@@ -31,7 +38,6 @@ public class DeviceService {
     private final HistoryService historyService;
     private final PropertyRepository propertyRepository;
 
-    // Helper: Tìm device (không cần check ownership)
     private Device findDeviceById(String id) {
         return deviceRepository.findById(id)
                 .orElseThrow(() -> new ValidationException(ErrorCode.DEVICE_NOT_FOUND, "Device not found"));
@@ -40,25 +46,53 @@ public class DeviceService {
     @Transactional
     public DeviceResponse create(DeviceRequest request) {
         if (deviceRepository.existsByUniqueIdentifier(request.getUniqueIdentifier())) {
-            throw new ValidationException(ErrorCode.DEVICE_IDENTIFIER_EXISTS, "Unique identifier already exists");
+            throw new ValidationException(ErrorCode.DEVICE_IDENTIFIER_EXISTS, "Mã thiết bị đã tồn tại");
         }
 
         DeviceType deviceType = deviceTypeRepository.findById(request.getDeviceTypeId())
-                .orElseThrow(() -> new ValidationException(ErrorCode.DEVICE_TYPE_NOT_FOUND, "DeviceType not found"));
+                .orElseThrow(() -> new ValidationException(ErrorCode.DEVICE_TYPE_NOT_FOUND, "Loại thiết bị không tồn tại"));
 
         Device device = deviceMapper.toEntity(request);
         device.setDeviceType(deviceType);
 
-        // Gán Primary Property
+        // 1. Xử lý Sensors và lưu Threshold
+        if (request.getPropertyIds() != null && !request.getPropertyIds().isEmpty()) {
+            Set<Sensor> sensors = new HashSet<>();
+            List<Property> properties = propertyRepository.findAllById(request.getPropertyIds());
+
+            for (Property prop : properties) {
+                Sensor.SensorBuilder sensorBuilder = Sensor.builder()
+                        .name(device.getName() + " - " + prop.getName())
+                        .device(device)
+                        .property(prop)
+                        .status(SensorStatus.ACTIVE)
+                        .isActuator(false);
+
+                // NẾU ĐÂY LÀ PRIMARY PROPERTY -> LƯU THRESHOLD
+                if (prop.getId().equals(request.getPrimaryPropertyId())) {
+                    sensorBuilder.thresholdWarning(request.getThresholdWarning());
+                    sensorBuilder.thresholdCritical(request.getThresholdCritical());
+                }
+
+                sensors.add(sensorBuilder.build());
+            }
+            device.setSensors(sensors);
+        }
+
+        // 2. Set Primary Property Reference
         if (request.getPrimaryPropertyId() != null && !request.getPrimaryPropertyId().isEmpty()) {
+            if (request.getPropertyIds() != null && !request.getPropertyIds().contains(request.getPrimaryPropertyId())) {
+                throw new ValidationException(ErrorCode.INVALID_REQUEST, "Thuộc tính chính phải thuộc danh sách thuộc tính đã chọn");
+            }
             Property property = propertyRepository.findById(request.getPrimaryPropertyId())
-                    .orElseThrow(() -> new ValidationException(ErrorCode.PROPERTY_NOT_FOUND, "Property not found"));
+                    .orElseThrow(() -> new ValidationException(ErrorCode.PROPERTY_NOT_FOUND, "Thuộc tính không tìm thấy"));
             device.setPrimaryProperty(property);
         }
 
         Device savedDevice = deviceRepository.save(device);
 
-        // ... (phần ghi log history giữ nguyên)
+        historyService.saveHistory(savedDevice, ActionLog.CREATE, HistoryType.DEVICE_MANAGEMENT,
+                savedDevice.getId(), SecurityUtils.getCurrentUsername(), "Create a device");
 
         return deviceMapper.toResponse(savedDevice);
     }
@@ -66,29 +100,74 @@ public class DeviceService {
     @Transactional
     public DeviceResponse update(String id, DeviceRequest request) {
         Device device = findDeviceById(id);
-
         deviceMapper.updateEntityFromRequest(request, device);
 
-        // Cập nhật DeviceType (giữ nguyên code cũ)
+        // Update Device Type
         if (!device.getDeviceType().getId().equals(request.getDeviceTypeId())) {
             DeviceType deviceType = deviceTypeRepository.findById(request.getDeviceTypeId())
                     .orElseThrow(() -> new ValidationException(ErrorCode.DEVICE_TYPE_NOT_FOUND, "DeviceType not found"));
             device.setDeviceType(deviceType);
         }
 
-        // Cập nhật Primary Property
+        // 1. Đồng bộ danh sách Sensors
+        if (request.getPropertyIds() != null) {
+            Set<String> newPropIds = new HashSet<>(request.getPropertyIds());
+
+            // Xóa sensor cũ không còn chọn
+            device.getSensors().removeIf(sensor -> !newPropIds.contains(sensor.getProperty().getId()));
+
+            // Lấy danh sách ID các property hiện có
+            Set<String> existingPropIds = device.getSensors().stream()
+                    .map(s -> s.getProperty().getId())
+                    .collect(Collectors.toSet());
+
+            // Thêm sensor mới
+            for (String propId : newPropIds) {
+                if (!existingPropIds.contains(propId)) {
+                    Property prop = propertyRepository.findById(propId)
+                            .orElseThrow(() -> new ValidationException(ErrorCode.PROPERTY_NOT_FOUND, "Property not found"));
+
+                    Sensor newSensor = Sensor.builder()
+                            .name(device.getName() + " - " + prop.getName())
+                            .device(device)
+                            .property(prop)
+                            .status(SensorStatus.ACTIVE)
+                            .isActuator(false)
+                            .build();
+                    device.getSensors().add(newSensor);
+                }
+            }
+        }
+
+        // 2. CẬP NHẬT THRESHOLD CHO CÁC SENSOR
+        // Duyệt qua tất cả sensor hiện tại để cập nhật threshold cho đúng cái Primary
+        if (device.getSensors() != null) {
+            for (Sensor sensor : device.getSensors()) {
+                // Nếu sensor này ứng với Primary Property -> Update Threshold
+                if (sensor.getProperty().getId().equals(request.getPrimaryPropertyId())) {
+                    sensor.setThresholdWarning(request.getThresholdWarning());
+                    sensor.setThresholdCritical(request.getThresholdCritical());
+                }
+                // (Tùy chọn: Nếu muốn xóa threshold của sensor cũ khi đổi primary, có thể thêm else set null)
+            }
+        }
+
+        // 3. Update Primary Property Reference
         if (request.getPrimaryPropertyId() != null && !request.getPrimaryPropertyId().isEmpty()) {
+            if (request.getPropertyIds() != null && !request.getPropertyIds().contains(request.getPrimaryPropertyId())) {
+                throw new ValidationException(ErrorCode.INVALID_REQUEST, "Thuộc tính chính phải thuộc danh sách thuộc tính đã chọn");
+            }
             Property property = propertyRepository.findById(request.getPrimaryPropertyId())
                     .orElseThrow(() -> new ValidationException(ErrorCode.PROPERTY_NOT_FOUND, "Property not found"));
             device.setPrimaryProperty(property);
         } else {
-            // Nếu người dùng xóa chọn (gửi null/empty), ta set về null
             device.setPrimaryProperty(null);
         }
 
         Device updatedDevice = deviceRepository.save(device);
 
-        // ... (phần ghi log history giữ nguyên)
+        historyService.saveHistory(updatedDevice, ActionLog.UPDATE, HistoryType.DEVICE_MANAGEMENT,
+                updatedDevice.getId(), SecurityUtils.getCurrentUsername(), "Update a device");
 
         return deviceMapper.toResponse(updatedDevice);
     }
@@ -97,20 +176,17 @@ public class DeviceService {
     public void delete(String id) {
         Device device = findDeviceById(id);
         deviceRepository.delete(device);
-
         historyService.saveHistory(device, ActionLog.DELETE, HistoryType.DEVICE_MANAGEMENT,
                 device.getId(), SecurityUtils.getCurrentUsername(), "Delete a device");
     }
 
     @Transactional(readOnly = true)
     public DeviceResponse getById(String id) {
-        Device device = findDeviceById(id);
-        return deviceMapper.toResponse(device);
+        return deviceMapper.toResponse(findDeviceById(id));
     }
 
     @Transactional(readOnly = true)
     public Page<DeviceResponse> getAllDevices(Pageable pageable) {
-        return deviceRepository.findAll(pageable)
-                .map(deviceMapper::toResponse);
+        return deviceRepository.findAll(pageable).map(deviceMapper::toResponse);
     }
 }

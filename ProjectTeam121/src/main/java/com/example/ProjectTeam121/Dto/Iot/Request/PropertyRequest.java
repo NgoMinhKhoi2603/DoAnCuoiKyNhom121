@@ -8,13 +8,13 @@ import lombok.Data;
 
 @Data
 public class PropertyRequest {
-    @NotBlank
-    @Size(max = 100)
+    @NotBlank(message = "Tên thuộc tính không được để trống")
+    @Size(max = 100, message = "Tên thuộc tính không quá 100 ký tự")
     private String name;
 
-    @Size(max = 20)
+    @Size(max = 20, message = "Đơn vị tính không quá 20 ký tự")
     private String unit;
 
-    @NotNull
+    @NotNull(message = "Kiểu dữ liệu không được để trống")
     private PropertyDataType dataType;
 }

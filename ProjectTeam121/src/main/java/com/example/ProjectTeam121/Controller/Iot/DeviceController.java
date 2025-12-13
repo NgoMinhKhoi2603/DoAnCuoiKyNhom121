@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/v1/iot/devices")
 @RequiredArgsConstructor
+@CrossOrigin(origins = "*", allowedHeaders = "*") // Cho phép FE gọi API
 public class DeviceController {
 
     private final DeviceService deviceService;

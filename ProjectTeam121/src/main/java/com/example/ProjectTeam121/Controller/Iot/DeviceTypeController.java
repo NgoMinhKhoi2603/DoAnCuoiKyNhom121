@@ -13,10 +13,12 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/v1/iot/device-types")
 @RequiredArgsConstructor
+@CrossOrigin(origins = "*", allowedHeaders = "*") // Cho phép FE gọi API
 public class DeviceTypeController {
 
     private final DeviceTypeService deviceTypeService;
 
+    // API Tạo mới loại thiết bị
     @PostMapping
     public ResponseEntity<DeviceTypeResponse> create(@Valid @RequestBody DeviceTypeRequest request) {
         return ResponseEntity.ok(deviceTypeService.create(request));

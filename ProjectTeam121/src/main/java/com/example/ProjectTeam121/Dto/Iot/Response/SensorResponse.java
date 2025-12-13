@@ -17,7 +17,9 @@ public class SensorResponse extends BaseIotResponse {
     private BigDecimal thresholdWarning;
     private BigDecimal thresholdCritical;
     private String latestValue;
-    private String deviceId;
+
+    // Thêm thông tin Property để hiển thị
     private String propertyId;
     private String propertyName;
+    private String propertyUnit;
 }
