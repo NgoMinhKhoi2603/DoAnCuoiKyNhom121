@@ -1,6 +1,8 @@
 package com.example.ProjectTeam121.Entity;
 
 import com.example.ProjectTeam121.utils.SecurityUtils;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty; // Thêm import này
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
@@ -31,9 +33,16 @@ public class Comment extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "parent_comment_id")
+    @JsonIgnore
     private Comment parent;
 
+    @JsonProperty("parent_comment_id")
+    public String getParentCommentId() {
+        return parent != null ? parent.getId() : null;
+    }
+
     @OneToMany(mappedBy = "parent", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
     private Set<Comment> replies = new HashSet<>();
 
     @Column(nullable = false)

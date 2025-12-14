@@ -9,6 +9,7 @@ import com.example.ProjectTeam121.Mapper.HistoryMapper;
 import com.example.ProjectTeam121.Repository.HistoryRepository;
 import com.fasterxml.jackson.annotation.JsonFilter;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.ser.FilterProvider;
 import com.fasterxml.jackson.databind.ser.impl.SimpleBeanPropertyFilter;
 import com.fasterxml.jackson.databind.ser.impl.SimpleFilterProvider;
@@ -147,28 +148,36 @@ public class HistoryService {
     /* ------------------------------------------------------------------
      * 6. CONVERT ENTITY TO JSON (FILTER BASEENTITY FIELDS)
      * ------------------------------------------------------------------ */
-    private <T> String convertEntityToJson(T entity) throws Exception {
-        if (entity instanceof BaseEntity) {
+    private <T> String convertEntityToJson(T entity) {
+        try {
+            if (entity instanceof BaseEntity) {
+                // Tạo một mapper riêng để không ảnh hưởng global
+                ObjectMapper filteredMapper = objectMapper.copy();
 
-            ObjectMapper filteredMapper = objectMapper.copy();
+                //Bỏ qua lỗi khi gặp object rỗng (do lazy loading)
+                filteredMapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
 
-            SimpleBeanPropertyFilter baseEntityFilter =
-                    SimpleBeanPropertyFilter.serializeAllExcept(
-                            "id", "flagStatus", "isDeleted", "version",
-                            "createdBy", "createDate", "lastUpdatedBy", "lastUpdateDate"
-                    );
+                // Cấu hình bộ lọc
+                SimpleBeanPropertyFilter baseEntityFilter =
+                        SimpleBeanPropertyFilter.serializeAllExcept(
+                                "id", "flagStatus", "isDeleted", "version",
+                                "createdBy", "createDate", "lastUpdatedBy", "lastUpdateDate"
+                        );
 
-            FilterProvider filters = new SimpleFilterProvider()
-                    .addFilter("baseEntityFilter", baseEntityFilter)
-                    .setDefaultFilter(SimpleBeanPropertyFilter.serializeAll());
+                FilterProvider filters = new SimpleFilterProvider()
+                        .addFilter("baseEntityFilter", baseEntityFilter)
+                        .setDefaultFilter(SimpleBeanPropertyFilter.serializeAll());
 
-            filteredMapper.setFilterProvider(filters);
-            filteredMapper.addMixIn(BaseEntity.class, BaseEntityFilterMixIn.class);
+                filteredMapper.setFilterProvider(filters);
+                filteredMapper.addMixIn(BaseEntity.class, BaseEntityFilterMixIn.class);
 
-            return filteredMapper.writeValueAsString(entity);
+                return filteredMapper.writeValueAsString(entity);
+            }
+            return objectMapper.writeValueAsString(entity);
+        } catch (Exception e) {
+            log.warn("JSON conversion failed for entity: {} - Error: {}", entity.getClass().getSimpleName(), e.getMessage());
+            return "{}"; // Trả về JSON rỗng thay vì ném lỗi làm chết luồng
         }
-
-        return objectMapper.writeValueAsString(entity);
     }
 
     @JsonFilter("baseEntityFilter")
