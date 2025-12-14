@@ -12,6 +12,7 @@ import com.example.ProjectTeam121.Entity.User;
 import com.example.ProjectTeam121.Mapper.UserMapper;
 import com.example.ProjectTeam121.Repository.CommentRepository;
 import com.example.ProjectTeam121.Repository.HistoryRepository;
+import com.example.ProjectTeam121.Repository.Iot.DeviceRepository;
 import com.example.ProjectTeam121.Repository.RoleRepository;
 import com.example.ProjectTeam121.Repository.UserRepository;
 import com.example.ProjectTeam121.utils.SecurityUtils;
@@ -39,6 +40,7 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
     private final CommentRepository commentRepository;
     private final HistoryRepository historyRepository;
+    private final DeviceRepository deviceRepository;
 
     private User findUserByEmail(String email) {
         return userRepository.findByEmail(email)
@@ -54,7 +56,16 @@ public class UserService {
     @Transactional(readOnly = true)
     public Page<UserResponse> getPage(Pageable pageable) {
         Page<User> userPage = userRepository.findAll(pageable);
-        return userMapper.toUserResponsePage(userPage);
+
+        return userPage.map(user -> {
+            UserResponse response = userMapper.toUserResponse(user);
+
+            long deviceCount = deviceRepository.countByCreatedBy(user.getEmail());
+
+            response.setDeviceCount(deviceCount);
+
+            return response;
+        });
     }
 
     @Transactional(readOnly = true)

@@ -43,6 +43,7 @@ public class AiDataIngestionService {
             String uniqueId = parts[2];
 
             // 2. Tìm thiết bị trong DB
+            // Lưu ý: Nếu có method findByUniqueIdentifier trong repo thì nên dùng để tối ưu hơn stream()
             Optional<Device> deviceOpt = deviceRepository.findAll().stream()
                     .filter(d -> d.getUniqueIdentifier().equals(uniqueId))
                     .findFirst();
@@ -54,7 +55,7 @@ public class AiDataIngestionService {
 
             Device device = deviceOpt.get();
 
-            // 3. Xác định danh sách Sensor mục tiêu (CHỈ DỰA TRÊN CẤU HÌNH CỦA DEVICE)
+            // 3. Xác định danh sách Sensor mục tiêu
             List<Sensor> targetSensors = determineTargetSensors(device);
 
             // 4. Parse dữ liệu payload
@@ -73,6 +74,8 @@ public class AiDataIngestionService {
             Iterator<String> fieldNames = dataNode.fieldNames();
             while (fieldNames.hasNext()) {
                 String key = fieldNames.next();
+                if (!dataNode.get(key).isNumber()) continue; // Bỏ qua nếu không phải số
+
                 double value = dataNode.get(key).asDouble();
 
                 Sensor matchedSensor = targetSensors.stream()
@@ -150,8 +153,14 @@ public class AiDataIngestionService {
             metadata.put("device_name", device.getName());
             // Vẫn lấy tên device type để phân thư mục, nhưng không dùng để check logic
             metadata.put("device_type", device.getDeviceType() != null ? device.getDeviceType().getName() : "unknown");
-            metadata.put("location_province", device.getProvince());
             metadata.put("timestamp", LocalDateTime.now().toString());
+
+            // Thêm đầy đủ thông tin vị trí
+            metadata.put("location_province", device.getProvince() != null ? device.getProvince() : "N/A");
+            metadata.put("location_district", device.getDistrict() != null ? device.getDistrict() : "N/A");
+            metadata.put("location_ward", device.getWard() != null ? device.getWard() : "N/A");
+            metadata.put("location_specific", device.getLocation() != null ? device.getLocation() : "N/A");
+            // ---------------------------------------
 
             record.set("features", data);
             record.put("label", label);
@@ -172,7 +181,8 @@ public class AiDataIngestionService {
 
             minioService.uploadJson(path, objectMapper.writeValueAsString(record));
 
-            log.info(">> AI Data Ingested: Label=[{}] | Device=[{}] | Path=[{}]", label, uniqueId, path);
+            log.info(">> AI Data Ingested: Label=[{}] | Device=[{}] | Location=[{}, {}] | Path=[{}]",
+                    label, uniqueId, device.getDistrict(), device.getProvince(), path);
 
         } catch (Exception e) {
             log.error("Failed to save data to Data Lake", e);

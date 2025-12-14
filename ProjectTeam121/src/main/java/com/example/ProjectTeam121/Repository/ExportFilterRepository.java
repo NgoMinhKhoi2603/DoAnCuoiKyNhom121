@@ -10,4 +10,6 @@ import java.util.List;
 public interface ExportFilterRepository extends JpaRepository<ExportFilter, Long> {
     // Tìm các bộ lọc của người dùng dựa trên email (định danh mới)
     List<ExportFilter> findByUser_Email(String email);
+
+    List<ExportFilter> findByUser_EmailOrderByCreateAtDesc(String email);
 }

@@ -19,4 +19,5 @@ public class UserResponse {
     private Set<String> roles;
     private boolean deactivated;
     private boolean commentingLocked;
+    private Long deviceCount;
 }

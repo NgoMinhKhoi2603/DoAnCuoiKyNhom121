@@ -1,5 +1,9 @@
 package com.example.ProjectTeam121.Controller;
 
+import com.example.ProjectTeam121.Dto.Iot.Request.LakeQueryRequest;
+import com.example.ProjectTeam121.Dto.Iot.Response.LakeQueryResponse;
+import com.example.ProjectTeam121.Dto.Response.ExportFilterResponse;
+import com.example.ProjectTeam121.Service.IoTLakeService;
 import com.example.ProjectTeam121.Service.MinioService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -19,6 +23,7 @@ public class DataQueryController {
 
     private final MinioService minioService;
     private final ObjectMapper objectMapper;
+    private final IoTLakeService ioTLakeService;
 
     @GetMapping
     public ResponseEntity<List<JsonNode>> queryDeviceData(
@@ -51,5 +56,24 @@ public class DataQueryController {
         }
 
         return ResponseEntity.ok(dataPoints);
+    }
+
+    @PostMapping("/lake")
+    public ResponseEntity<List<LakeQueryResponse>> queryLake(@RequestBody LakeQueryRequest request) {
+        return ResponseEntity.ok(ioTLakeService.queryData(request));
+    }
+
+    @PostMapping("/history")
+    public ResponseEntity<Void> saveHistory(
+            @RequestParam String fileName,
+            @RequestBody LakeQueryRequest request) {
+
+        ioTLakeService.saveExportHistory(request, fileName);
+        return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/history")
+    public ResponseEntity<List<ExportFilterResponse>> getHistory() {
+        return ResponseEntity.ok(ioTLakeService.getMyExportHistory());
     }
 }
