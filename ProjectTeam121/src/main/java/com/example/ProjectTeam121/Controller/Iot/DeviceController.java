@@ -43,4 +43,8 @@ public class DeviceController {
     public ResponseEntity<Page<DeviceResponse>> getAllDevices(Pageable pageable) {
         return ResponseEntity.ok(deviceService.getAllDevices(pageable));
     }
+    @GetMapping({ "", "/" })
+public ResponseEntity<Page<DeviceResponse>> getDevices(Pageable pageable) {
+    return ResponseEntity.ok(deviceService.getAllDevices(pageable));
+}
 }
