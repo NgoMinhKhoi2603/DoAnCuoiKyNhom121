@@ -15,7 +15,6 @@ public interface ExportFilterMapper {
     @Mapping(target = "createAt", ignore = true)
     ExportFilter toEntity(ExportFilterRequest request);
 
-    @Mapping(source = "user.email", target = "userEmail")
     ExportFilterResponse toResponse(ExportFilter entity);
 
     @Mapping(target = "id", ignore = true)
