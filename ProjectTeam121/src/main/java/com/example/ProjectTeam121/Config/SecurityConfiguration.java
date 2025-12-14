@@ -66,12 +66,12 @@ public class SecurityConfiguration {
                         // Quyền Admin
                         .requestMatchers("/api/v1/admin/**").hasAuthority("ROLE_ADMIN")
 
-                        // Quyền IoT (Phân quyền Method)
-                        .requestMatchers(HttpMethod.POST, "/api/v1/iot/**").hasAuthority("ROLE_ADMIN")
-                        .requestMatchers(HttpMethod.PUT, "/api/v1/iot/**").hasAuthority("ROLE_ADMIN")
-                        .requestMatchers(HttpMethod.DELETE, "/api/v1/iot/**").hasAuthority("ROLE_ADMIN")
+                        // Quyền IoT
+                        .requestMatchers(HttpMethod.POST, "/api/v1/iot/**").authenticated()
+                        .requestMatchers(HttpMethod.PUT, "/api/v1/iot/**").authenticated()
+                        .requestMatchers(HttpMethod.DELETE, "/api/v1/iot/**").authenticated()
 
-                        // Quyền Xem IoT (Authenticated users)
+                        // Quyền Xem IoT
                         .requestMatchers(HttpMethod.GET, "/api/v1/iot/**").authenticated()
 
                         // Còn lại bắt buộc đăng nhập

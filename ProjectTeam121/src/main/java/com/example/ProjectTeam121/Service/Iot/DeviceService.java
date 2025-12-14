@@ -20,6 +20,8 @@ import com.example.ProjectTeam121.utils.exceptions.ValidationException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -187,6 +189,23 @@ public class DeviceService {
 
     @Transactional(readOnly = true)
     public Page<DeviceResponse> getAllDevices(Pageable pageable) {
-        return deviceRepository.findAll(pageable).map(deviceMapper::toResponse);
+        // 1. Lấy thông tin xác thực hiện tại
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String currentUsername = authentication.getName(); // Lấy email/username của người đang login
+
+        // 2. Kiểm tra Role
+        boolean isAdmin = authentication.getAuthorities().stream()
+                .anyMatch(r -> r.getAuthority().equals("ROLE_ADMIN"));
+
+        // 3. Phân chia luồng dữ liệu
+        if (isAdmin) {
+            // Admin thấy tất cả
+            return deviceRepository.findAll(pageable)
+                    .map(deviceMapper::toResponse);
+        } else {
+            // User chỉ thấy thiết bị do mình tạo (dựa vào trường createdBy của BaseEntity)
+            return deviceRepository.findAllByCreatedBy(currentUsername, pageable)
+                    .map(deviceMapper::toResponse);
+        }
     }
 }
