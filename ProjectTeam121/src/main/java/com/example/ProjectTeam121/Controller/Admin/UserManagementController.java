@@ -15,6 +15,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.multipart.MultipartFile;
 
 
 @RestController
@@ -90,5 +91,12 @@ public class UserManagementController {
             @PathVariable String email,
             @Valid @RequestBody UpdateUserRequest request) {
         return ResponseEntity.ok(userService.updateUserInfo(request, email));
+    }
+
+    //Thêm nhiều tài khoản bằng file excel
+    @PostMapping("/import")
+    public ResponseEntity<String> importUsers(@RequestParam("file") MultipartFile file) {
+        String message = userService.importUsersFromExcel(file);
+        return ResponseEntity.ok(message);
     }
 }

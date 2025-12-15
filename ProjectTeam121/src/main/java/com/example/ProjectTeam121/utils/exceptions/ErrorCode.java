@@ -58,7 +58,9 @@ public enum ErrorCode {
     DEVICE_CODE_EXISTS(1048, "error.device_code_already_exists", HttpStatus.BAD_REQUEST),
     ACCOUNT_DEACTIVATED(1049, "error.account_deactivated", HttpStatus.FORBIDDEN),
     INVALID_DATA(1050, "error.invalid_data", HttpStatus.BAD_REQUEST),
-    INVALID_REQUEST(1051, "error.INVALID_REQUEST", HttpStatus.BAD_REQUEST);
+    INVALID_REQUEST(1051, "error.INVALID_REQUEST", HttpStatus.BAD_REQUEST),
+    UNCATEGORIZED_EXCEPTION(1052, "error.UNCATEGORIZED_EXCEPTION", HttpStatus.BAD_REQUEST),
+    ;
 
     private final int code;
     private final String messageKey;

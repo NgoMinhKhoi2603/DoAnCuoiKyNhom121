@@ -2,6 +2,7 @@ package com.example.ProjectTeam121.Service;
 
 import com.example.ProjectTeam121.Dto.Enum.ActionLog;
 import com.example.ProjectTeam121.Dto.Enum.HistoryType;
+import com.example.ProjectTeam121.Dto.Enum.UnitEnum;
 import com.example.ProjectTeam121.Dto.Request.AvatarRequest;
 import com.example.ProjectTeam121.Dto.Request.ChangePasswordRequest;
 import com.example.ProjectTeam121.Dto.Request.UpdateUserRequest;
@@ -19,15 +20,22 @@ import com.example.ProjectTeam121.utils.SecurityUtils;
 import com.example.ProjectTeam121.utils.exceptions.ErrorCode;
 import com.example.ProjectTeam121.utils.exceptions.ValidationException;
 import lombok.RequiredArgsConstructor;
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -314,5 +322,132 @@ public class UserService {
                 savedUser.getEmail(), email, "Update information of account");
 
         return userMapper.toUserResponse(savedUser);
+    }
+
+
+    /**
+     * Import User từ file Excel (.xlsx)
+     * Cấu trúc file: Cột A: Email, Cột B: Họ tên, Cột C: Đơn vị (Unit), Cột D: Role (USER/ADMIN)
+     */
+    @Transactional
+    public String importUsersFromExcel(MultipartFile file) {
+        if (file.isEmpty()) {
+            throw new ValidationException(ErrorCode.INVALID_INPUT, "File không được để trống");
+        }
+
+        List<User> newUsers = new ArrayList<>();
+        int successCount = 0;
+        int skipCount = 0;
+
+        try (Workbook workbook = new XSSFWorkbook(file.getInputStream())) {
+            Sheet sheet = workbook.getSheetAt(0); // Lấy sheet đầu tiên
+
+            // Duyệt từng dòng (Bỏ qua dòng tiêu đề index 0)
+            for (int i = 1; i <= sheet.getLastRowNum(); i++) {
+                Row row = sheet.getRow(i);
+                if (row == null) continue;
+
+                // 1. Đọc dữ liệu từ các cột
+                String email = getCellValue(row.getCell(0));
+                String fullName = getCellValue(row.getCell(1));
+                String unitStr = getCellValue(row.getCell(2));
+                String roleName = getCellValue(row.getCell(3)).toUpperCase();
+
+                // 2. Validate
+                if (email.isEmpty()) {
+                    skipCount++;
+                    continue;
+                }
+
+                if (fullName.length() < 3 || fullName.length() > 100) {
+                    skipCount++;
+                    continue;
+                }
+
+                // 3. Kiểm tra email đã tồn tại chưa
+                if (userRepository.existsByEmail(email)) {
+                    skipCount++;
+                    continue;
+                }
+
+                // 4. Tạo User mới
+                User user = new User();
+                user.setEmail(email);
+                user.setFullName(fullName);
+                user.setUnit(parseUnitEnum(unitStr));
+                user.setEnabled(true);
+                user.setLocked(false);
+                user.setAvatar("uploads/noimage.png"); // Avatar mặc định
+
+                // Mật khẩu mặc định là 123456
+                user.setPassword(passwordEncoder.encode("123456"));
+
+                // Xử lý Role (Mặc định là USER nếu không tìm thấy hoặc để trống)
+                // 1. Luôn gán quyền USER trước (Mặc định ai cũng phải có)
+                Role userRole = roleRepository.findByName("ROLE_USER")
+                        .orElseThrow(() -> new ValidationException(ErrorCode.ROLE_NOT_FOUND,
+                                "Lỗi hệ thống: Không tìm thấy 'ROLE_USER'. Vui lòng kiểm tra database."));
+
+                user.getRoles().add(userRole);
+
+                // 2. Kiểm tra file Excel, nếu là ADMIN thì gán thêm quyền ADMIN
+                if (!roleName.isEmpty()) {
+                    String normalized = roleName.startsWith("ROLE_") ? roleName : "ROLE_" + roleName;
+
+                    if (normalized.equals("ROLE_ADMIN")) {
+                        Role adminRole = roleRepository.findByName("ROLE_ADMIN")
+                                .orElseThrow(() -> new ValidationException(ErrorCode.ROLE_NOT_FOUND,
+                                        "Lỗi hệ thống: Không tìm thấy 'ROLE_ADMIN'. Vui lòng kiểm tra database."));
+
+                        // Thêm quyền Admin vào danh sách quyền (Lúc này user có 2 role)
+                        user.getRoles().add(adminRole);
+                    }
+                }
+
+                newUsers.add(user);
+                successCount++;
+            }
+
+            // Lưu tất cả vào DB
+            userRepository.saveAll(newUsers);
+
+            if (successCount > 0) {
+                String currentEmail = SecurityUtils.getCurrentUsername();
+                User adminUser = findUserByEmail(currentEmail);
+
+                String description = String.format("Imported %d users from Excel file", successCount);
+                String identify = String.format("%d new users", successCount);
+
+                historyService.saveHistory(adminUser, ActionLog.CREATE, HistoryType.USER_MANAGEMENT,
+                        identify, currentEmail, description
+                );
+            }
+
+        } catch (IOException e) {
+            throw new ValidationException(ErrorCode.UNCATEGORIZED_EXCEPTION, "Lỗi đọc file Excel");
+        }
+
+        return String.format("Đã thêm thành công %d người dùng. Bỏ qua %d người dùng (do trùng Email hoặc lỗi dữ liệu).", successCount, skipCount);
+    }
+
+    // Helper để lấy giá trị text từ ô Excel tránh NullPointerException
+    private String getCellValue(Cell cell) {
+        if (cell == null) return "";
+        cell.setCellType(CellType.STRING);
+        return cell.getStringCellValue().trim();
+    }
+
+    // Helper method để convert String -> UnitEnum an toàn
+    private UnitEnum parseUnitEnum(String unitName) {
+        if (unitName == null || unitName.trim().isEmpty()) {
+            return null; // Hoặc trả về giá trị mặc định nếu có, ví dụ: UnitEnum.OTHER
+        }
+        try {
+            // Cố gắng tìm Enum có tên trùng khớp (Không phân biệt hoa thường)
+            return UnitEnum.valueOf(unitName.trim().toUpperCase());
+        } catch (IllegalArgumentException e) {
+            // Nếu trong file Excel điền linh tinh không khớp enum nào -> trả về null hoặc mặc định
+            return null;
+        }
     }
 }
