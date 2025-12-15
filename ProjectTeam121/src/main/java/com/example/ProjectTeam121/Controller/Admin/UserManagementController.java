@@ -94,7 +94,7 @@ public class UserManagementController {
     }
 
     //Thêm nhiều tài khoản bằng file excel
-    @PostMapping("/import")
+    @PostMapping("users/import")
     public ResponseEntity<String> importUsers(@RequestParam("file") MultipartFile file) {
         String message = userService.importUsersFromExcel(file);
         return ResponseEntity.ok(message);
