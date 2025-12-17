@@ -43,9 +43,7 @@ public class AiDataIngestionService {
             String uniqueId = parts[2];
 
             // 2. Tìm thiết bị trong DB
-            Optional<Device> deviceOpt = deviceRepository.findAll().stream()
-                    .filter(d -> d.getUniqueIdentifier().equals(uniqueId))
-                    .findFirst();
+            Optional<Device> deviceOpt = deviceRepository.findByUniqueIdentifier(uniqueId);
 
             if (deviceOpt.isEmpty()) {
                 log.warn("Device not found with Identifier: {}", uniqueId);
