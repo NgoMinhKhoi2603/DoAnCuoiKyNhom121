@@ -21,6 +21,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import java.io.InputStream;
 import java.time.LocalDate;
@@ -69,15 +70,13 @@ public class IoTLakeService {
                 return null;
             }
 
-            // Đọc nội dung file
-            InputStream stream = minioClient.getObject(
+            try (InputStream stream = minioClient.getObject(
                     GetObjectArgs.builder()
                             .bucket(bucket)
                             .object(latest.objectName())
-                            .build()
-            );
-
-            return new String(stream.readAllBytes());
+                            .build())) {
+                return new String(stream.readAllBytes());
+            }
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -136,6 +135,9 @@ public class IoTLakeService {
                                 JsonNode rootNode = objectMapper.readTree(stream);
                                 JsonNode metadataNode = rootNode.get("metadata");
 
+                                //Lấy node units để đọc đơn vị
+                                JsonNode unitsNode = rootNode.get("units");
+
                                 // --- XỬ LÝ VỊ TRÍ & FALLBACK ---
 
                                 // Hàm helper: Trả về rỗng nếu giá trị là null/"null"/"N/A"
@@ -175,9 +177,7 @@ public class IoTLakeService {
 
                                 String fileLocation = locParts.isEmpty() ? "Chưa cập nhật vị trí" : String.join(", ", locParts);
 
-                                // === LOGIC MỚI: BỘ LỌC NGHIÊM NGẶT (STRICT FILTER) ===
-                                // Nếu người dùng CÓ tìm kiếm địa chỉ, nhưng kết quả cuối cùng lại không hợp lệ
-                                // (vẫn là "null", "N/A" hoặc "Chưa cập nhật..."), thì BỎ QUA dòng này.
+                                // === BỘ LỌC NGHIÊM NGẶT (STRICT FILTER) ===
                                 if (hasLocationFilter) {
                                     if (locParts.isEmpty() ||
                                             fileLocation.equalsIgnoreCase("Chưa cập nhật vị trí") ||
@@ -185,13 +185,11 @@ public class IoTLakeService {
                                         continue; // Next bản ghi
                                     }
 
-                                    // Tùy chọn nâng cao: Kiểm tra xem fileLocation có CHỨA từ khóa tìm kiếm không?
-                                    // Ví dụ tìm "Hà Nội" mà fileLocation ra "Hồ Chí Minh" (do thiết bị di chuyển) -> Nên bỏ qua
-                                    if (request.getProvince() != null && !request.getProvince().isEmpty() &&
-                                            !fileLocation.toLowerCase().contains(request.getProvince().toLowerCase())) continue;
-
-                                    if (request.getDistrict() != null && !request.getDistrict().isEmpty() &&
-                                            !fileLocation.toLowerCase().contains(request.getDistrict().toLowerCase())) continue;
+                                    String locLower = fileLocation.toLowerCase();
+                                    if (StringUtils.hasText(request.getProvince()) && !locLower.contains(request.getProvince().toLowerCase())) continue;
+                                    if (StringUtils.hasText(request.getDistrict()) && !locLower.contains(request.getDistrict().toLowerCase())) continue;
+                                    if (StringUtils.hasText(request.getWard()) && !locLower.contains(request.getWard().toLowerCase())) continue;
+                                    if (StringUtils.hasText(request.getSpecificLocation()) && !locLower.contains(request.getSpecificLocation().toLowerCase())) continue;
                                 }
                                 // =====================================================
 
@@ -216,12 +214,19 @@ public class IoTLakeService {
                                         }
 
                                         if (isMatch) {
+                                            // --- MỚI: Lấy đơn vị từ node units ---
+                                            String unit = "";
+                                            if (unitsNode != null && unitsNode.has(key)) {
+                                                unit = unitsNode.get(key).asText();
+                                            }
+                                            // ------------------------------------
+
                                             results.add(LakeQueryResponse.builder()
                                                     .deviceId(device.getId())
                                                     .deviceName(device.getName())
                                                     .propertyName(key)
                                                     .value(featuresNode.get(key).asText())
-                                                    .unit("")
+                                                    .unit(unit) // Gán unit lấy được vào response
                                                     .timestamp(timestamp)
                                                     .location(fileLocation)
                                                     .label(label)
