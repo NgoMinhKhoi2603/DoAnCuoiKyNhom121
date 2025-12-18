@@ -1,6 +1,5 @@
 package com.example.ProjectTeam121.Config;
 
-
 import org.slf4j.MDC;
 import org.springframework.aop.interceptor.AsyncUncaughtExceptionHandler;
 import org.springframework.aop.interceptor.SimpleAsyncUncaughtExceptionHandler;
@@ -14,6 +13,7 @@ import org.springframework.lang.NonNull;
 import org.springframework.scheduling.annotation.AsyncConfigurer;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.core.task.TaskDecorator;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -92,28 +92,31 @@ public class AsyncConfig implements AsyncConfigurer {
         };
     }
 
-//    @Override
-//    @Bean(name = "taskExecutor")
-//    public Executor getAsyncExecutor() {
-//        if (useVirtualThreads) {
-//            log.info("Sử dụng MDC-aware Virtual Thread Executor cho xử lý bất đồng bộ");
-//            return mdcAwareVirtualThreadExecutor();
-//        } else {
-//            log.info("Cấu hình MDC-aware Platform Thread Executor cho xử lý bất đồng bộ");
-//
-//            ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
-//            executor.setCorePoolSize(corePoolSize);
-//            executor.setMaxPoolSize(maxPoolSize);
-//            executor.setQueueCapacity(queueCapacity);
-//            executor.setThreadNamePrefix(threadNamePrefix);
-//
-//            // Thêm task decorator để sao chép MDC
-//            executor.setTaskDecorator(mdcContextTaskDecorator());
-//
-//            executor.initialize();
-//            return executor;
-//        }
-//    }
+    // ==========================================================
+    // THÊM BEAN NÀY: Executor chuyên biệt cho IoT (Upload/Query)
+    // ==========================================================
+    @Bean(name = "iotTaskExecutor")
+    public Executor iotTaskExecutor() {
+        log.info("Khởi tạo Thread Pool riêng biệt cho tác vụ IoT (Upload/Query)");
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+
+        // Cấu hình số luồng:
+        // Core = 10: Luôn có 10 luồng trực chiến
+        // Max = 50: Nếu tải cao, tăng lên tối đa 50 luồng
+        // Queue = 500: Nếu cả 50 luồng đều bận, xếp 500 yêu cầu tiếp theo vào hàng đợi
+        executor.setCorePoolSize(10);
+        executor.setMaxPoolSize(50);
+        executor.setQueueCapacity(500);
+
+        executor.setThreadNamePrefix("IoT-Worker-");
+
+        // Sử dụng decorator của bạn để Log vẫn có trace ID (MDC)
+        executor.setTaskDecorator(mdcContextTaskDecorator());
+
+        executor.initialize();
+        return executor;
+    }
+    // ==========================================================
 
     @Bean("virtualThreadTaskExecutor")
     public TaskExecutor virtualThreadTaskExecutor() {

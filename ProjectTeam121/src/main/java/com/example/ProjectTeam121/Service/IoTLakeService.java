@@ -20,6 +20,7 @@ import io.minio.messages.Item;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
@@ -28,6 +29,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 
 @Service
@@ -84,7 +86,15 @@ public class IoTLakeService {
         }
     }
 
-    public List<LakeQueryResponse> queryData(LakeQueryRequest request) {
+    /**
+     * Truy vấn dữ liệu Data Lake (CHẠY BẤT ĐỒNG BỘ)
+     */
+    @Async("iotTaskExecutor")
+    public CompletableFuture<List<LakeQueryResponse>> queryData(LakeQueryRequest request) {
+
+        // Log để kiểm tra luồng đang chạy
+        log.info("Start Async Query on Thread: {}", Thread.currentThread().getName());
+
         List<LakeQueryResponse> results = new ArrayList<>();
 
         // 1. Kiểm tra xem người dùng có đang lọc theo vị trí không?
@@ -103,7 +113,9 @@ public class IoTLakeService {
                 request.getDeviceTypeId()
         );
 
-        if (targetDevices.isEmpty()) return results;
+        if (targetDevices.isEmpty()) {
+            return CompletableFuture.completedFuture(results);
+        }
 
         // === 3. CHUẨN BỊ MAP LỌC PROPERTY ===
         // Thay vì chỉ Map ID -> Name, ta Map: Name -> Danh sách Unit cho phép
@@ -222,7 +234,7 @@ public class IoTLakeService {
                                             fileUnit = unitsNode.get(key).asText();
                                         }
 
-                                        // 2. Logic kiểm tra Match (ĐÃ SỬA: Check cả Tên và Unit)
+                                        // Logic kiểm tra Match (Strict Unit)
                                         boolean isMatch = false;
 
                                         // Nếu user không chọn property nào -> Lấy hết
@@ -265,7 +277,9 @@ public class IoTLakeService {
         }
 
         results.sort(Comparator.comparing(LakeQueryResponse::getTimestamp).reversed());
-        return results;
+
+        // Trả về kết quả Async
+        return CompletableFuture.completedFuture(results);
     }
 
     public void saveExportHistory(LakeQueryRequest request, String fileName) {
@@ -284,9 +298,9 @@ public class IoTLakeService {
 
             // Map sang Entity của bạn
             ExportFilter history = ExportFilter.builder()
-                    .user(user)               // Set User object
-                    .filterName(fileName)     // filterName
-                    .filterJson(jsonPayload)  // filterJson
+                    .user(user)
+                    .filterName(fileName)
+                    .filterJson(jsonPayload)
                     .description(desc)
                     .build();
 
@@ -310,5 +324,17 @@ public class IoTLakeService {
                 .createAt(e.getCreateAt())
                 .build()
         ).toList();
+    }
+
+    // Thêm hàm xóa lịch sử (Cần thiết cho Controller)
+    public void deleteExportHistory(Long id) {
+        String currentUserEmail = SecurityUtils.getCurrentUsername();
+        ExportFilter history = exportFilterRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy lịch sử truy vấn này."));
+
+        if (!history.getUser().getEmail().equals(currentUserEmail)) {
+            throw new RuntimeException("Bạn không có quyền xóa lịch sử của người khác.");
+        }
+        exportFilterRepository.delete(history);
     }
 }

@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.integration.annotation.ServiceActivator;
 import org.springframework.messaging.Message;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -152,6 +153,7 @@ public class AiDataIngestionService {
                 .orElse(null);
     }
 
+    @Async("iotTaskExecutor")
     private void saveToDataLake(Device device, JsonNode data, String label, List<String> reasons, String uniqueId) {
         try {
             ObjectNode record = objectMapper.createObjectNode();
@@ -198,6 +200,8 @@ public class AiDataIngestionService {
                     uniqueId, now.getYear(), now.getMonthValue(), now.getDayOfMonth(), label, System.currentTimeMillis());
 
             minioService.uploadJson(path, objectMapper.writeValueAsString(record));
+
+            log.info("Thread: {} | Upload success for Device: {}", Thread.currentThread().getName(), uniqueId);
             log.info(">> AI Data Ingested: Label=[{}] | Device=[{}]", label, uniqueId);
 
         } catch (Exception e) {

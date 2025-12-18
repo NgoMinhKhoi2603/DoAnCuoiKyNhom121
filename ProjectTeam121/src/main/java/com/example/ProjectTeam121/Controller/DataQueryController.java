@@ -15,6 +15,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 @RestController
 @RequestMapping("/api/v1/data-query")
@@ -59,8 +60,9 @@ public class DataQueryController {
     }
 
     @PostMapping("/lake")
-    public ResponseEntity<List<LakeQueryResponse>> queryLake(@RequestBody LakeQueryRequest request) {
-        return ResponseEntity.ok(ioTLakeService.queryData(request));
+    public CompletableFuture<ResponseEntity<List<LakeQueryResponse>>> queryLakeData(@RequestBody LakeQueryRequest request) {
+        return ioTLakeService.queryData(request)
+                .thenApply(ResponseEntity::ok);
     }
 
     @PostMapping("/history")
