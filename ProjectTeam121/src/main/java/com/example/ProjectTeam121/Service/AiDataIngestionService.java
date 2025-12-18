@@ -154,7 +154,7 @@ public class AiDataIngestionService {
     }
 
     @Async("iotTaskExecutor")
-    private void saveToDataLake(Device device, JsonNode data, String label, List<String> reasons, String uniqueId) {
+    public void saveToDataLake(Device device, JsonNode data, String label, List<String> reasons, String uniqueId) {
         try {
             ObjectNode record = objectMapper.createObjectNode();
 
