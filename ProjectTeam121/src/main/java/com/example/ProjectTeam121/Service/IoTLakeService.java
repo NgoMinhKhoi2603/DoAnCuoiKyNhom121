@@ -105,12 +105,19 @@ public class IoTLakeService {
 
         if (targetDevices.isEmpty()) return results;
 
-        // Map Property ID sang Name
+        // === 3. CHUẨN BỊ MAP LỌC PROPERTY ===
+        // Thay vì chỉ Map ID -> Name, ta Map: Name -> Danh sách Unit cho phép
+        // Ví dụ: "temperature" -> ["°C"] (Nếu user chỉ chọn °C)
         Set<String> targetPropIds = (request.getPropertyIds() == null) ? new HashSet<>() : new HashSet<>(request.getPropertyIds());
-        Map<String, String> propertyIdToNameMap = new HashMap<>();
+        Map<String, Set<String>> allowedPropertyUnits = new HashMap<>();
+
         if (!targetPropIds.isEmpty()) {
             List<Property> props = propertyRepository.findAllById(targetPropIds);
-            for(Property p : props) propertyIdToNameMap.put(p.getId(), p.getName());
+            for (Property p : props) {
+                allowedPropertyUnits
+                        .computeIfAbsent(p.getName(), k -> new HashSet<>())
+                        .add(p.getUnit() != null ? p.getUnit() : "");
+            }
         }
 
         // 3. Duyệt file MinIO
@@ -208,25 +215,36 @@ public class IoTLakeService {
 
                                     while (fieldNames.hasNext()) {
                                         String key = fieldNames.next();
-                                        boolean isMatch = targetPropIds.isEmpty();
-                                        if (!isMatch) {
-                                            isMatch = propertyIdToNameMap.containsValue(key);
+
+                                        // 1. Lấy đơn vị từ file JSON (nếu có)
+                                        String fileUnit = "";
+                                        if (unitsNode != null && unitsNode.has(key)) {
+                                            fileUnit = unitsNode.get(key).asText();
+                                        }
+
+                                        // 2. Logic kiểm tra Match (ĐÃ SỬA: Check cả Tên và Unit)
+                                        boolean isMatch = false;
+
+                                        // Nếu user không chọn property nào -> Lấy hết
+                                        if (targetPropIds.isEmpty()) {
+                                            isMatch = true;
+                                        }
+                                        // Nếu user có chọn -> Check xem key có nằm trong danh sách tên cho phép không
+                                        // VÀ unit của file có nằm trong danh sách unit cho phép của tên đó không
+                                        else if (allowedPropertyUnits.containsKey(key)) {
+                                            Set<String> validUnits = allowedPropertyUnits.get(key);
+                                            if (validUnits.contains(fileUnit)) {
+                                                isMatch = true;
+                                            }
                                         }
 
                                         if (isMatch) {
-                                            // --- MỚI: Lấy đơn vị từ node units ---
-                                            String unit = "";
-                                            if (unitsNode != null && unitsNode.has(key)) {
-                                                unit = unitsNode.get(key).asText();
-                                            }
-                                            // ------------------------------------
-
                                             results.add(LakeQueryResponse.builder()
                                                     .deviceId(device.getId())
                                                     .deviceName(device.getName())
                                                     .propertyName(key)
                                                     .value(featuresNode.get(key).asText())
-                                                    .unit(unit) // Gán unit lấy được vào response
+                                                    .unit(fileUnit)
                                                     .timestamp(timestamp)
                                                     .location(fileLocation)
                                                     .label(label)

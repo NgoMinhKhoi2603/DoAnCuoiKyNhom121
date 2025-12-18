@@ -16,7 +16,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -73,6 +72,12 @@ public class AiDataIngestionService {
                 }
             }
 
+            // --- LẤY ID CỦA PROPERTY CHÍNH (Nếu có) ---
+            String primaryPropId = (device.getPrimaryProperty() != null)
+                    ? device.getPrimaryProperty().getId()
+                    : null;
+            // -----------------------------------------------
+
             String finalLabel = "NORMAL";
             List<String> reasons = new ArrayList<>();
 
@@ -85,42 +90,54 @@ public class AiDataIngestionService {
                 if (sensorMap.containsKey(keyLower)) {
                     JsonNode valueNode = rawDataNode.get(key);
 
-                    // Thêm vào dữ liệu đã lọc (Giữ nguyên key gốc để đẹp đội hình)
+                    // Thêm vào dữ liệu đã lọc (Vẫn lưu tất cả, kể cả Pin)
                     filteredData.set(key, valueNode);
 
-                    // --- Logic Gán nhãn (Di chuyển vào đây để dùng luôn) ---
+                    // --- Logic Gán nhãn ---
                     if (valueNode.isNumber()) {
-                        double value = valueNode.asDouble();
                         Sensor matchedSensor = sensorMap.get(keyLower);
-                        BigDecimal val = BigDecimal.valueOf(value);
 
-                        if (matchedSensor.getThresholdCritical() != null
-                                && val.compareTo(matchedSensor.getThresholdCritical()) >= 0) {
-                            finalLabel = "CRITICAL";
-                            reasons.add(String.format("[%s] %s (%.2f) >= Critical (%.2f)",
-                                    matchedSensor.getName(), key, val, matchedSensor.getThresholdCritical()));
+                        // --- KIỂM TRA QUYỀN GÁN NHÃN ---
+                        boolean isEligibleForLabeling = true;
+                        if (primaryPropId != null) {
+                            // Nếu thiết bị CÓ thuộc tính chính, thì sensor này PHẢI khớp mới được tính
+                            if (!matchedSensor.getProperty().getId().equals(primaryPropId)) {
+                                isEligibleForLabeling = false;
+                            }
                         }
-                        else if (!"CRITICAL".equals(finalLabel)
-                                && matchedSensor.getThresholdWarning() != null
-                                && val.compareTo(matchedSensor.getThresholdWarning()) >= 0) {
-                            finalLabel = "WARNING";
-                            reasons.add(String.format("[%s] %s (%.2f) >= Warning (%.2f)",
-                                    matchedSensor.getName(), key, val, matchedSensor.getThresholdWarning()));
+                        // --------------------------------------
+
+                        if (isEligibleForLabeling) {
+                            double value = valueNode.asDouble();
+                            BigDecimal val = BigDecimal.valueOf(value);
+
+                            if (matchedSensor.getThresholdCritical() != null
+                                    && val.compareTo(matchedSensor.getThresholdCritical()) >= 0) {
+                                finalLabel = "CRITICAL";
+                                reasons.add(String.format("[%s] %s (%.2f) >= Critical (%.2f)",
+                                        matchedSensor.getName(), key, val, matchedSensor.getThresholdCritical()));
+                            }
+                            else if (!"CRITICAL".equals(finalLabel)
+                                    && matchedSensor.getThresholdWarning() != null
+                                    && val.compareTo(matchedSensor.getThresholdWarning()) >= 0) {
+                                finalLabel = "WARNING";
+                                reasons.add(String.format("[%s] %s (%.2f) >= Warning (%.2f)",
+                                        matchedSensor.getName(), key, val, matchedSensor.getThresholdWarning()));
+                            }
                         }
                     }
                 } else {
-                    // Log cảnh báo nếu thiết bị gửi trường lạ (Optional)
                     log.debug("Ignored unknown property '{}' from device '{}'", key, uniqueId);
                 }
             }
 
-            // 5. Nếu sau khi lọc mà không còn dữ liệu nào -> Bỏ qua, không lưu
+            // 5. Nếu sau khi lọc mà không còn dữ liệu nào -> Bỏ qua
             if (filteredData.isEmpty()) {
-                log.warn("Payload rejected: No valid properties found matching device configuration. Device: {}", uniqueId);
+                log.warn("Payload rejected: No valid properties. Device: {}", uniqueId);
                 return;
             }
 
-            // 6. Lưu xuống Data Lake (Sử dụng filteredData thay vì rawDataNode)
+            // 6. Lưu xuống Data Lake
             saveToDataLake(device, filteredData, finalLabel, reasons, uniqueId);
 
         } catch (Exception e) {
@@ -128,8 +145,6 @@ public class AiDataIngestionService {
         }
     }
 
-
-    // Hàm tìm Sensor khớp key
     private Sensor findSensorByKey(Device device, String key) {
         return device.getSensors().stream()
                 .filter(s -> s.getProperty() != null && s.getProperty().getName().equalsIgnoreCase(key))
@@ -154,10 +169,10 @@ public class AiDataIngestionService {
             metadata.put("location_ward", device.getWard() != null ? device.getWard() : "N/A");
             metadata.put("location_specific", device.getLocation() != null ? device.getLocation() : "N/A");
 
-            // --- Features (Dữ liệu đã lọc) ---
+            // Features
             record.set("features", data);
 
-            // --- Units (Lưu đơn vị đo) ---
+            // Units
             ObjectNode unitsNode = objectMapper.createObjectNode();
             Iterator<String> fieldNames = data.fieldNames();
 
@@ -167,11 +182,10 @@ public class AiDataIngestionService {
                 // Tìm lại sensor để lấy Unit
                 Sensor s = findSensorByKey(device, key);
                 String unit = (s != null && s.getProperty() != null) ? s.getProperty().getUnit() : "";
-
                 unitsNode.put(key, unit);
             }
             record.set("units", unitsNode);
-            // ----------------------------------------------------
+
 
             record.put("label", label);
 
@@ -181,20 +195,13 @@ public class AiDataIngestionService {
 
             LocalDateTime now = LocalDateTime.now();
             String path = String.format("telemetry/%s/%d/%02d/%02d/%s_%s.json",
-                    uniqueId,
-                    now.getYear(),
-                    now.getMonthValue(),
-                    now.getDayOfMonth(),
-                    label,
-                    System.currentTimeMillis()
-            );
+                    uniqueId, now.getYear(), now.getMonthValue(), now.getDayOfMonth(), label, System.currentTimeMillis());
 
             minioService.uploadJson(path, objectMapper.writeValueAsString(record));
-
-            log.info(">> AI Data Ingested: Label=[{}] | Device=[{}] | Path=[{}]", label, uniqueId, path);
+            log.info(">> AI Data Ingested: Label=[{}] | Device=[{}]", label, uniqueId);
 
         } catch (Exception e) {
-            log.error("Failed to save data to Data Lake", e);
+            log.error("Failed to save data", e);
         }
     }
 }
