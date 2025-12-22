@@ -1,8 +1,10 @@
 package com.example.ProjectTeam121.Service;
 
+import com.example.ProjectTeam121.Dto.Enum.PropertyDataType;
 import com.example.ProjectTeam121.Entity.Iot.Device;
 import com.example.ProjectTeam121.Entity.Iot.Sensor;
 import com.example.ProjectTeam121.Repository.Iot.DeviceRepository;
+import com.example.ProjectTeam121.utils.DataValidator;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -26,6 +28,7 @@ public class AiDataIngestionService {
     private final MinioService minioService;
     private final DeviceRepository deviceRepository;
     private final ObjectMapper objectMapper;
+    private final DataValidator dataValidator;
 
     @ServiceActivator(inputChannel = "mqttInputChannel")
     @Transactional(readOnly = true)
@@ -87,21 +90,33 @@ public class AiDataIngestionService {
                 String key = fieldNames.next();
                 String keyLower = key.toLowerCase();
 
-                // KIỂM TRA QUAN TRỌNG: Key gửi lên có nằm trong cấu hình thiết bị không?
+                // KIỂM TRA: Key có nằm trong danh sách Sensor của thiết bị không?
                 if (sensorMap.containsKey(keyLower)) {
                     JsonNode valueNode = rawDataNode.get(key);
+                    Sensor matchedSensor = sensorMap.get(keyLower);
 
-                    // Thêm vào dữ liệu đã lọc (Vẫn lưu tất cả, kể cả Pin)
+                    // =================================================================
+                    // 4. KIỂM TRA DATA TYPE (VALIDATION) - Mới thêm
+                    // =================================================================
+                    PropertyDataType expectedType = matchedSensor.getProperty().getDataType();
+                    String valueAsString = valueNode.asText();
+
+                    if (!dataValidator.isValid(valueAsString, expectedType)) {
+                        log.warn("DATA REJECTED [Device: {}]: Field '{}' value '{}' is not valid type {}",
+                                uniqueId, key, valueAsString, expectedType);
+                        continue; // Bỏ qua trường này, không xử lý tiếp
+                    }
+                    // =================================================================
+
+                    // Nếu hợp lệ, thêm vào danh sách dữ liệu sạch
                     filteredData.set(key, valueNode);
 
-                    // --- Logic Gán nhãn ---
-                    if (valueNode.isNumber()) {
-                        Sensor matchedSensor = sensorMap.get(keyLower);
+                    // --- Logic Gán nhãn (chỉ áp dụng nếu là Số) ---
+                    if (valueNode.isNumber() && expectedType == PropertyDataType.NUMERIC) {
 
                         // --- KIỂM TRA QUYỀN GÁN NHÃN ---
                         boolean isEligibleForLabeling = true;
                         if (primaryPropId != null) {
-                            // Nếu thiết bị CÓ thuộc tính chính, thì sensor này PHẢI khớp mới được tính
                             if (!matchedSensor.getProperty().getId().equals(primaryPropId)) {
                                 isEligibleForLabeling = false;
                             }
@@ -134,7 +149,7 @@ public class AiDataIngestionService {
 
             // 5. Nếu sau khi lọc mà không còn dữ liệu nào -> Bỏ qua
             if (filteredData.isEmpty()) {
-                log.warn("Payload rejected: No valid properties. Device: {}", uniqueId);
+                log.warn("Payload rejected: All fields invalid or unknown. Device: {}", uniqueId);
                 return;
             }
 
@@ -180,14 +195,11 @@ public class AiDataIngestionService {
 
             while (fieldNames.hasNext()) {
                 String key = fieldNames.next();
-
-                // Tìm lại sensor để lấy Unit
                 Sensor s = findSensorByKey(device, key);
                 String unit = (s != null && s.getProperty() != null) ? s.getProperty().getUnit() : "";
                 unitsNode.put(key, unit);
             }
             record.set("units", unitsNode);
-
 
             record.put("label", label);
 
