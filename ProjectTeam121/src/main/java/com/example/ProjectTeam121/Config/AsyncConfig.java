@@ -95,28 +95,27 @@ public class AsyncConfig implements AsyncConfigurer {
     // ==========================================================
     // THÊM BEAN NÀY: Executor chuyên biệt cho IoT (Upload/Query)
     // ==========================================================
-    @Bean(name = "iotTaskExecutor")
-    public Executor iotTaskExecutor() {
-        log.info("Khởi tạo Thread Pool riêng biệt cho tác vụ IoT (Upload/Query)");
+    @Bean(name = "ingestionExecutor")
+    public Executor ingestionExecutor() {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
-
-        // Cấu hình số luồng:
-        // Core = 10: Luôn có 10 luồng trực chiến
-        // Max = 50: Nếu tải cao, tăng lên tối đa 50 luồng
-        // Queue = 500: Nếu cả 50 luồng đều bận, xếp 500 yêu cầu tiếp theo vào hàng đợi
-        executor.setCorePoolSize(10);
-        executor.setMaxPoolSize(50);
-        executor.setQueueCapacity(500);
-
-        executor.setThreadNamePrefix("IoT-Worker-");
-
-        // Sử dụng decorator của bạn để Log vẫn có trace ID (MDC)
-        executor.setTaskDecorator(mdcContextTaskDecorator());
-
+        executor.setCorePoolSize(10); // Số luồng cơ bản
+        executor.setMaxPoolSize(50);  // Tăng lên khi tải cao
+        executor.setQueueCapacity(1000); // Hàng đợi chờ
+        executor.setThreadNamePrefix("Ingest-");
         executor.initialize();
         return executor;
     }
-    // ==========================================================
+
+    @Bean(name = "queryExecutor")
+    public Executor queryExecutor() {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        executor.setCorePoolSize(5);
+        executor.setMaxPoolSize(20);
+        executor.setQueueCapacity(100);
+        executor.setThreadNamePrefix("Query-");
+        executor.initialize();
+        return executor;
+    }
 
     @Bean("virtualThreadTaskExecutor")
     public TaskExecutor virtualThreadTaskExecutor() {

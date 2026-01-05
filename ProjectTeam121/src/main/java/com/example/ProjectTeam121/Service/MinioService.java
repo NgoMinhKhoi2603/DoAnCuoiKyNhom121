@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -22,37 +23,32 @@ public class MinioService {
     @Autowired
     private MinioClient minioClient;
 
-    // Bucket mặc định cho việc upload ảnh/file thông thường
+    // Bucket mặc định cho việc upload ảnh/file thông thường từ Frontend
     @Value("${minio.bucket-name}")
     private String bucketName;
 
-    // Bucket dành riêng cho Data Lake (AI Training)
-    // Bạn nhớ thêm dòng minio.datalake-bucket=ai-training-data vào application.properties
-    // Hoặc nếu muốn dùng chung bucket, bạn có thể sửa code bên dưới để dùng biến this.bucketName
+    // Bucket dành riêng cho Data Lake (AI Training - Parquet/JSON)
     @Value("${minio.datalake-bucket:ai-training-data}")
     private String dataLakeBucket;
 
     // ========================================================================
-    // 1. Upload file (MultipartFile) từ Controller
+    // 1. Upload file (MultipartFile) từ Controller (Avatar, ảnh...)
     // ========================================================================
     public String uploadFile(MultipartFile file) {
         try {
-            // Kiểm tra bucket, nếu chưa có thì tạo
             boolean found = minioClient.bucketExists(BucketExistsArgs.builder().bucket(bucketName).build());
             if (!found) {
                 minioClient.makeBucket(MakeBucketArgs.builder().bucket(bucketName).build());
             }
 
-            // Tạo tên file duy nhất để tránh trùng lặp
             String fileName = System.currentTimeMillis() + "_" + file.getOriginalFilename();
 
-            // Upload
             minioClient.putObject(
                     PutObjectArgs.builder()
                             .bucket(bucketName)
                             .object(fileName)
                             .stream(file.getInputStream(), file.getSize(), -1)
-                            .contentType(file.getContentType()) // Lưu content-type để trình duyệt hiểu file gì
+                            .contentType(file.getContentType())
                             .build()
             );
 
@@ -88,7 +84,7 @@ public class MinioService {
                             .method(Method.GET)
                             .bucket(bucketName)
                             .object(fileName)
-                            .expiry(1, TimeUnit.HOURS) // Link hết hạn sau 1 giờ
+                            .expiry(1, TimeUnit.HOURS)
                             .build()
             );
         } catch (Exception e) {
@@ -97,21 +93,18 @@ public class MinioService {
     }
 
     // ========================================================================
-    // 4. API MỚI: Upload JSON String (Dùng cho AI Data Lake)
+    // 4. API: Upload JSON String (Dùng nếu muốn lưu JSON thô)
     // ========================================================================
     public String uploadJson(String objectName, String jsonContent) {
         try {
-            // Kiểm tra bucket Data Lake, nếu chưa có thì tạo
             boolean found = minioClient.bucketExists(BucketExistsArgs.builder().bucket(dataLakeBucket).build());
             if (!found) {
                 minioClient.makeBucket(MakeBucketArgs.builder().bucket(dataLakeBucket).build());
             }
 
-            // Chuyển chuỗi JSON thành luồng bytes
             byte[] contentBytes = jsonContent.getBytes(StandardCharsets.UTF_8);
             InputStream stream = new ByteArrayInputStream(contentBytes);
 
-            // Upload với content-type là application/json
             minioClient.putObject(
                     PutObjectArgs.builder()
                             .bucket(dataLakeBucket)
@@ -127,19 +120,20 @@ public class MinioService {
         }
     }
 
-    // 4. Liệt kê file trong Data Lake (Sửa để dùng dataLakeBucket)
+    // ========================================================================
+    // 5. Liệt kê file trong Data Lake
+    // ========================================================================
     public List<String> listFiles(String prefix) {
         List<String> fileNames = new ArrayList<>();
         try {
-            // Kiểm tra bucket tồn tại chưa để tránh lỗi
             boolean found = minioClient.bucketExists(BucketExistsArgs.builder().bucket(dataLakeBucket).build());
             if (!found) {
-                return fileNames; // Trả về list rỗng nếu chưa có bucket
+                return fileNames;
             }
 
             Iterable<Result<Item>> results = minioClient.listObjects(
                     ListObjectsArgs.builder()
-                            .bucket(dataLakeBucket) // QUAN TRỌNG: Dùng bucket Data Lake
+                            .bucket(dataLakeBucket)
                             .prefix(prefix)
                             .recursive(true)
                             .build());
@@ -153,12 +147,39 @@ public class MinioService {
         return fileNames;
     }
 
-    // 5. Đọc nội dung file từ Data Lake (Sửa để dùng dataLakeBucket)
+    // ========================================================================
+    // 6. API MỚI: Upload Local File (Dùng cho Parquet Service)
+    // ========================================================================
+    public void uploadFile(String objectName, File file) {
+        try {
+            // Kiểm tra bucket Data Lake
+            boolean found = minioClient.bucketExists(BucketExistsArgs.builder().bucket(dataLakeBucket).build());
+            if (!found) {
+                minioClient.makeBucket(MakeBucketArgs.builder().bucket(dataLakeBucket).build());
+            }
+
+            // UploadObjectArgs dùng để upload file từ đường dẫn vật lý (Disk)
+            minioClient.uploadObject(
+                    UploadObjectArgs.builder()
+                            .bucket(dataLakeBucket)
+                            .object(objectName) // Tên file trên MinIO (VD: telemetry/.../file.parquet)
+                            .filename(file.getAbsolutePath()) // Đường dẫn file tạm trên server
+                            .contentType("application/octet-stream") // Dạng binary cho Parquet
+                            .build()
+            );
+
+        } catch (Exception e) {
+            throw new RuntimeException("Lỗi upload file Parquet lên MinIO: " + e.getMessage());
+        }
+    }
+
+    // ========================================================================
+    // 7. Đọc nội dung file từ Data Lake
+    // ========================================================================
     public String getFileContent(String fileName) {
-        // QUAN TRỌNG: Không dùng hàm getFile() cũ vì nó trỏ vào test-bucket
         try (InputStream stream = minioClient.getObject(
                 GetObjectArgs.builder()
-                        .bucket(dataLakeBucket) // QUAN TRỌNG: Dùng bucket Data Lake
+                        .bucket(dataLakeBucket)
                         .object(fileName)
                         .build())) {
             return IOUtils.toString(stream, StandardCharsets.UTF_8);
