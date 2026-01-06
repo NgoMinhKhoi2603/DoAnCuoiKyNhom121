@@ -16,7 +16,6 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.io.File;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -30,7 +29,6 @@ public class AiDataIngestionService {
     private final DeviceRepository deviceRepository;
     private final ObjectMapper objectMapper;
     private final DataValidator dataValidator;
-    private final ParquetService parquetService; // <--- 1. Inject ParquetService
 
     @ServiceActivator(inputChannel = "mqttInputChannel")
     @Transactional(readOnly = true)
@@ -98,7 +96,7 @@ public class AiDataIngestionService {
                     Sensor matchedSensor = sensorMap.get(keyLower);
 
                     // =================================================================
-                    // 4. KIỂM TRA DATA TYPE (VALIDATION)
+                    // 4. KIỂM TRA DATA TYPE (VALIDATION) - Mới thêm
                     // =================================================================
                     PropertyDataType expectedType = matchedSensor.getProperty().getDataType();
                     String valueAsString = valueNode.asText();
@@ -155,7 +153,7 @@ public class AiDataIngestionService {
                 return;
             }
 
-            // 6. Lưu xuống Data Lake (Sẽ convert sang Parquet bên trong hàm này)
+            // 6. Lưu xuống Data Lake
             saveToDataLake(device, filteredData, finalLabel, reasons, uniqueId);
 
         } catch (Exception e) {
@@ -170,14 +168,12 @@ public class AiDataIngestionService {
                 .orElse(null);
     }
 
-    @Async("ingestionExecutor")
+    @Async("iotTaskExecutor")
     public void saveToDataLake(Device device, JsonNode data, String label, List<String> reasons, String uniqueId) {
-        File parquetFile = null; // Khai báo file tạm
         try {
-            // --- BƯỚC A: TẠO JSON RECORD NHƯ BÌNH THƯỜNG ---
             ObjectNode record = objectMapper.createObjectNode();
 
-            // Metadata
+            // --- Metadata ---
             ObjectNode metadata = record.putObject("metadata");
             metadata.put("device_id", device.getId());
             metadata.put("device_identifier", uniqueId);
@@ -211,32 +207,17 @@ public class AiDataIngestionService {
                 record.put("label_reason", String.join("; ", reasons));
             }
 
-            // --- CHUYỂN ĐỔI JSON -> PARQUET ---
-            // Gọi service để convert record JSON thành file .parquet tạm thời
-            parquetFile = parquetService.convertJsonToParquet(record);
-
-            // ---  UPLOAD FILE PARQUET ---
             LocalDateTime now = LocalDateTime.now();
-            // Lưu ý: Đổi đuôi file thành .parquet
-            String path = String.format("telemetry/%s/%d/%02d/%02d/%s_%s.parquet",
+            String path = String.format("telemetry/%s/%d/%02d/%02d/%s_%s.json",
                     uniqueId, now.getYear(), now.getMonthValue(), now.getDayOfMonth(), label, System.currentTimeMillis());
 
-            // Gọi hàm uploadFile (nhận vào File) thay vì uploadJson
-            minioService.uploadFile(path, parquetFile);
+            minioService.uploadJson(path, objectMapper.writeValueAsString(record));
 
-            log.info("Thread: {} | Upload PARQUET success for Device: {}", Thread.currentThread().getName(), uniqueId);
-            log.info(">> AI Data Ingested: Label=[{}] | Device=[{}] | Path=[{}]", label, uniqueId, path);
+            log.info("Thread: {} | Upload success for Device: {}", Thread.currentThread().getName(), uniqueId);
+            log.info(">> AI Data Ingested: Label=[{}] | Device=[{}]", label, uniqueId);
 
         } catch (Exception e) {
-            log.error("Failed to save Parquet data", e);
-        } finally {
-            // --- BƯỚC D: DỌN DẸP FILE TẠM ---
-            if (parquetFile != null && parquetFile.exists()) {
-                boolean deleted = parquetFile.delete();
-                if (!deleted) {
-                    log.warn("Could not delete temp parquet file: {}", parquetFile.getAbsolutePath());
-                }
-            }
+            log.error("Failed to save data", e);
         }
     }
 }
